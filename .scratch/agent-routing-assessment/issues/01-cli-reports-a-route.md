@@ -12,18 +12,18 @@ This ticket also establishes the toolchain the rest of the work sits on: TypeScr
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done — delivered by 602cb34, 45ea088
 
-- [ ] Running the entry point with a Question prints the verdict and the per-bank scores
-- [ ] A money Question routes `finance`; a people Question routes `hr`
-- [ ] A cross-cutting Question routes `both` via the top-two margin
-- [ ] An off-topic Question produces an Abstention via the score floor and returns a clarification request
-- [ ] Abstention is represented distinctly from the `unclear` Route, not as the same value
-- [ ] No network call is made on any path, and no API key is required to run
-- [ ] The score floor and top-two margin are named constants, adjustable in one place
-- [ ] Exemplar Banks are data files; adding a phrasing to one changes routing without a logic edit
-- [ ] The embedding model is loaded once per process, not per Question
-- [ ] First-run model download is announced on the console with its approximate size before it starts
-- [ ] A Vitest table maps Questions to expected verdicts covering `finance`, `hr`, `both`, and Abstention, including phrasings near the score floor and near the top-two margin
-- [ ] Scores appear in test failure output so a boundary failure is diagnosable
-- [ ] The suite runs from a clean clone with no key and no network beyond the one-time model download
+- [x] Running the entry point with a Question prints the verdict and the per-bank scores
+- [x] A money Question routes `finance`; a people Question routes `hr`
+- [x] A cross-cutting Question routes `both` via the top-two margin
+- [x] An off-topic Question produces an Abstention via the score floor and returns a clarification request
+- [x] Abstention is represented distinctly from the `unclear` Route, not as the same value
+- [x] No network call is made on any path, and no API key is required to run
+- [x] The score floor and top-two margin are named constants, adjustable in one place
+- [x] Exemplar Banks are data files; adding a phrasing to one changes routing without a logic edit
+- [x] The embedding model is loaded once per process, not per Question
+- [x] First-run model download is announced on the console with its approximate size before it starts
+- [x] A Vitest table maps Questions to expected verdicts covering `finance`, `hr`, `both`, and Abstention, including phrasings near the score floor and near the top-two margin
+- [x] Scores appear in test failure output so a boundary failure is diagnosable
+- [x] The suite runs from a clean clone with no key and no network beyond the one-time model download

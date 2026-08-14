@@ -16,20 +16,20 @@ One negative behaviour matters as much as the positive ones: a Question the Loca
 
 **Blocked by:** 01 — Runnable CLI that reports a Route.
 
-**Status:** ready-for-agent
+**Status:** done — delivered by d0316b7, f4e75ad
 
-- [ ] Every model call in the system goes through one `LLMClient` interface; no caller touches the SDK directly
-- [ ] Replay Mode is the default and runs with no key set
-- [ ] Live Mode requires both an explicit flag and a key; either one alone fails with a clear message
-- [ ] A Fixture key is a digest of model, system prompt, message history, and tool schemas
-- [ ] Editing a system prompt or a tool schema changes the key and stops the old Fixture being served
-- [ ] A Fixture miss fails loudly, naming the missing key and the record command; it never falls through to the live API
-- [ ] The record command performs a Live Mode run and writes Fixtures for the Questions it is given
-- [ ] An Abstention from the Local Pass triggers Escalation through the `LLMClient`
-- [ ] Escalation returns one of `finance`, `hr`, `both`, or `unclear`; `unclear` returns a clarification request
-- [ ] Escalation sends no tools and no message history
-- [ ] The output names which stage produced the Route — Local Pass or Escalation
-- [ ] Escalation is unconditional; there is no flag that disables it
-- [ ] A Question the Local Pass places is asserted not to escalate
-- [ ] Escalation is tested through Replay against recorded Fixtures, with no key and no spend
-- [ ] A test proves a Fixture cannot be hand-edited into passing — the recorded-not-written rule is enforced or documented where a contributor will hit it
+- [x] Every model call in the system goes through one `LLMClient` interface; no caller touches the SDK directly
+- [x] Replay Mode is the default and runs with no key set
+- [x] Live Mode requires both an explicit flag and a key; either one alone fails with a clear message
+- [x] A Fixture key is a digest of model, system prompt, message history, and tool schemas
+- [x] Editing a system prompt or a tool schema changes the key and stops the old Fixture being served
+- [x] A Fixture miss fails loudly, naming the missing key and the record command; it never falls through to the live API
+- [x] The record command performs a Live Mode run and writes Fixtures for the Questions it is given
+- [x] An Abstention from the Local Pass triggers Escalation through the `LLMClient`
+- [x] Escalation returns one of `finance`, `hr`, `both`, or `unclear`; `unclear` returns a clarification request
+- [x] Escalation sends no tools and no message history
+- [x] The output names which stage produced the Route — Local Pass or Escalation
+- [x] Escalation is unconditional; there is no flag that disables it
+- [x] A Question the Local Pass places is asserted not to escalate
+- [x] Escalation is tested through Replay against recorded Fixtures, with no key and no spend
+- [x] A test proves a Fixture cannot be hand-edited into passing — the recorded-not-written rule is enforced or documented where a contributor will hit it

@@ -1,6 +1,6 @@
 # 04 — HR Agent answers people Questions end-to-end
 
-**What to build:** The second Specialist Agent, on the runtime ticket 04 established. Ask a people Question in plain language and get an answer back through the same interface that serves money Questions — the operator does not need to know which agent owns the Question.
+**What to build:** The second Specialist Agent, on the runtime ticket 03 established. Ask a people Question in plain language and get an answer back through the same interface that serves money Questions — the operator does not need to know which agent owns the Question.
 
 The HR Agent holds its own system prompt, its own hardcoded JSON Dataset, and its own Scoped Tools covering headcount, vacancies, attrition, and individual salaries. It has no access to company financials, and no tool it holds reads across the boundary. There is no shared data layer, no caller identity, and no per-request filtering anywhere in the system.
 

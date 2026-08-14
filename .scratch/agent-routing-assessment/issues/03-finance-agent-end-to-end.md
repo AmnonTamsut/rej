@@ -14,17 +14,17 @@ This ticket designs the agent runtime once. Ticket 04 reuses it rather than rein
 
 **Blocked by:** 02 — LLMClient seam, Fixtures, and Escalation.
 
-**Status:** ready-for-agent
+**Status:** done — delivered by e463248, 063c65e, bf2ce7f
 
-- [ ] A money Question asked at the entry point routes `finance` and returns an answer grounded in Finance Scoped Tool results
-- [ ] The output names the Route and the answering agent alongside the answer
-- [ ] The Finance Agent is handed only its own tool schemas; no other agent's tools are reachable from it
-- [ ] Scoped Tools are read-only; no Question can mutate the Dataset
-- [ ] The payroll tool returns aggregates only, by construction — there is no code path by which it could return a per-person figure
-- [ ] A structural test asserts the Finance Agent holds no tool capable of returning an individual's salary
-- [ ] Tool results from the turn are retained on the result for later auditing
-- [ ] The system prompt states the agent's domain and what it cannot see
-- [ ] A Question outside the finance domain produces a stated refusal rather than a speculative answer
-- [ ] Scoped Tools are tested directly as the pure functions they are
-- [ ] The end-to-end path is tested through the entry point against Fixtures, with no key and no spend
-- [ ] No test reaches inside the agent to assert on assembled prompts, intermediate message shapes, or call counts
+- [x] A money Question asked at the entry point routes `finance` and returns an answer grounded in Finance Scoped Tool results
+- [x] The output names the Route and the answering agent alongside the answer
+- [x] The Finance Agent is handed only its own tool schemas; no other agent's tools are reachable from it
+- [x] Scoped Tools are read-only; no Question can mutate the Dataset
+- [x] The payroll tool returns aggregates only, by construction — there is no code path by which it could return a per-person figure
+- [x] A structural test asserts the Finance Agent holds no tool capable of returning an individual's salary
+- [x] Tool results from the turn are retained on the result for later auditing
+- [x] The system prompt states the agent's domain and what it cannot see
+- [x] A Question outside the finance domain produces a stated refusal rather than a speculative answer
+- [x] Scoped Tools are tested directly as the pure functions they are
+- [x] The end-to-end path is tested through the entry point against Fixtures, with no key and no spend
+- [x] No test reaches inside the agent to assert on assembled prompts, intermediate message shapes, or call counts
