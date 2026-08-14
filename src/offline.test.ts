@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { beforeAll, describe, expect, it } from "vitest";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
-import { scratchFixturesDir, standInClient } from "./llm/testing.js";
+import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
 
@@ -45,15 +45,28 @@ describe("running with no key and no network", () => {
     await loadEmbedder();
   });
 
-  it("routes a Question the Local Pass places with every outbound connection blocked", async () => {
-    // Verified to have teeth — the same run against an empty model cache fails here.
-    const { stdout } = await run(
-      "npx",
-      ["tsx", "src/cli.ts", "What's our cash position right now?"],
-      { cwd: repoRoot, env: { ...process.env, ...NO_NETWORK } },
+  it("answers a money Question end to end with every outbound connection blocked", async () => {
+    // Verified to have teeth — the same run against an empty model cache fails
+    // here. The Local Pass routes locally and the Finance Agent's whole turn,
+    // tool calls and all, replays from Fixtures: no key, no spend, no network.
+    const question = "What's our cash position right now?";
+    const fixturesDir = scratchFixturesDir();
+    await recordFixtures(
+      [question],
+      scriptedClient([
+        asksFor("finance_cash_position"),
+        says("You hold 1,248,000 USD, with 13 months of runway."),
+      ]),
+      fixturesDir,
     );
 
+    const { stdout } = await run("npx", ["tsx", "src/cli.ts", question], {
+      cwd: repoRoot,
+      env: { ...process.env, ...NO_NETWORK, FIXTURES_DIR: fixturesDir },
+    });
+
     expect(stdout).toMatch(/Route:\s+finance/);
+    expect(stdout).toContain("1,248,000 USD");
   });
 
   it("serves an Escalation from a Fixture with every outbound connection blocked", async () => {

@@ -1,7 +1,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { LLMClient, LLMRequest } from "./client.js";
+import type { JsonObject, LLMClient, LLMRequest, LLMResponse } from "./client.js";
 
 /**
  * What the tests are allowed to substitute, kept in one place.
@@ -27,6 +27,50 @@ export const standInClient = (text: string): LLMClient & { readonly asked: LLMRe
     complete: async (request) => {
       asked.push(request);
       return { content: [{ type: "text", text }] };
+    },
+  };
+};
+
+/** A response in which the model answers in prose. */
+export const says = (text: string): LLMResponse => ({ content: [{ type: "text", text }] });
+
+/**
+ * A response in which the model asks for a Scoped Tool.
+ *
+ * The identifier is derived from the tool name rather than generated, so a
+ * recorded turn replays byte-for-byte on the next run.
+ */
+export const asksFor = (name: string, input: JsonObject = {}): LLMResponse => ({
+  content: [{ type: "tool_use", id: `use_${name}`, name, input }],
+});
+
+/**
+ * A client that plays a prepared sequence of responses.
+ *
+ * A tool-calling turn is several exchanges, so a single fixed answer cannot
+ * drive one. This is still the same single substitution — a stand-in at the
+ * `LLMClient` seam — and it is still the only one the suite permits. Running
+ * off the end of the script is an error rather than a repeat of the last
+ * response: a turn that asked for more than the test scripted is a test that
+ * has stopped describing what it thinks it does.
+ */
+export const scriptedClient = (
+  responses: readonly LLMResponse[],
+): LLMClient & { readonly asked: LLMRequest[] } => {
+  const asked: LLMRequest[] = [];
+
+  return {
+    asked,
+    complete: async (request) => {
+      const response = responses[asked.length];
+      asked.push(request);
+      if (response === undefined) {
+        throw new Error(
+          `The stand-in client was scripted with ${responses.length} responses and asked for ` +
+            `${asked.length}.`,
+        );
+      }
+      return response;
     },
   };
 };

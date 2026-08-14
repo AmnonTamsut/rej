@@ -1,14 +1,16 @@
+import { AGENT_FOR, askQuestion } from "./ask.js";
 import { type CliResult, runAsCommand } from "./command.js";
 import { API_KEY_VARIABLE, chooseMode, clientFor, environmentFrom, LIVE_FLAG } from "./llm/mode.js";
 import { rankBanks, type BankScores } from "./router/local-pass.js";
-import { routeQuestion, type RoutingStage } from "./router/router.js";
+import type { RoutingStage } from "./router/router.js";
 import { SCORE_FLOOR } from "./router/thresholds.js";
 
 const USAGE = [
   `Usage: npm run ask -- [${LIVE_FLAG}] "<Question>"`,
   "",
-  "Reports the Route the Router assigns a Question, which of its two stages",
-  "produced that Route, and the per-bank similarity scores behind it.",
+  "Answers a Question, reporting the Route the Router assigned it, which of the",
+  "Router's two stages produced that Route, which Specialist Agent answered, and",
+  "the per-bank similarity scores behind the verdict.",
   "",
   `Runs in Replay Mode by default: no key, no spend. ${LIVE_FLAG} calls the API`,
   `and needs ${API_KEY_VARIABLE}.`,
@@ -26,6 +28,18 @@ const formatScores = (scores: BankScores): string =>
     .map(({ route, score }) => `  ${route.padEnd(8)}${score.toFixed(3)}`)
     .join("\n");
 
+/**
+ * What to say about a Route no Specialist Agent owns yet.
+ *
+ * Reported rather than left blank: an operator who gets a Route and no answer
+ * should be told that is the build they are running, not left wondering whether
+ * the answer went missing. It reads the Routes off the wiring, so filling the
+ * table in is the only edit needed to retire this line.
+ */
+const UNANSWERED =
+  `This build answers ${Object.keys(AGENT_FOR).join(", ")} Questions. Other Routes are ` +
+  `reported but not yet answered.`;
+
 const CLARIFICATION = [
   "Neither the Local Pass nor Escalation could place this Question, so I would",
   "rather ask than guess. Could you rephrase it, saying whether you are asking",
@@ -34,7 +48,8 @@ const CLARIFICATION = [
 ].join("\n");
 
 /**
- * The top of the system: a Question in, the Router's verdict out.
+ * The top of the system: a Question in, and the Route, the agent that answered,
+ * and the answer out.
  *
  * Returns its output rather than printing it, so the tests can drive the real
  * entry point instead of a stand-in for it. It takes the environment as an
@@ -66,16 +81,19 @@ export const runCli = async (
   try {
     const choice = chooseMode({ live: flags.includes(LIVE_FLAG), apiKey: environment.apiKey });
     notice = choice.notice;
-    const verdict = await routeQuestion(question, clientFor(choice, environment));
+    const { verdict, answer } = await askQuestion(question, clientFor(choice, environment));
 
     const lines = [
       `Question: ${question}`,
       "",
       `Route:    ${verdict.route.padEnd(8)}  (${STAGE_LABEL[verdict.stage]})`,
-      "",
-      "Similarity scores by Exemplar Bank:",
-      formatScores(verdict.scores),
     ];
+    if (answer !== null) {
+      lines.push(`Agent:    ${answer.agent}`, "", answer.answer);
+    } else if (verdict.route !== "unclear") {
+      lines.push("", UNANSWERED);
+    }
+    lines.push("", "Similarity scores by Exemplar Bank:", formatScores(verdict.scores));
     if (verdict.stage === "escalation") {
       lines.push(
         "",

@@ -4,37 +4,72 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "./cli.js";
+import type { LLMResponse } from "./llm/client.js";
 import { RECORD_COMMAND } from "./llm/fixtures.js";
 import { API_KEY_VARIABLE, LIVE_FLAG } from "./llm/mode.js";
-import { scratchFixturesDir, standInClient } from "./llm/testing.js";
+import { asksFor, says, scratchFixturesDir, scriptedClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
 
 const UNPLACEABLE = "Write me a poem about a cat.";
+const CASH = "What's our cash position right now?";
+
+const CASH_ANSWER =
+  "You are holding 1,248,000 USD as of 2025-09-30, burning 96,000 USD a month, " +
+  "which is 13 months of runway.";
+
+/** A finance turn: the agent reads the cash position, then answers from it. */
+const CASH_TURN = [asksFor("finance_cash_position"), says(CASH_ANSWER)];
 
 /**
- * A fixtures directory holding a real recording of this Question's Escalation,
+ * A fixtures directory holding a real recording of this Question's model calls,
  * written by the record command rather than by hand.
  */
-const recorded = async (question: string, route: string): Promise<string> => {
+const recorded = async (
+  question: string,
+  responses: readonly LLMResponse[],
+): Promise<string> => {
   const dir = scratchFixturesDir();
-  await recordFixtures([question], standInClient(route), dir);
+  await recordFixtures([question], scriptedClient(responses), dir);
   return dir;
 };
 
 const ask = (question: string, env: Record<string, string | undefined> = {}) =>
   runCli([question], { ...env, FIXTURES_DIR: env["FIXTURES_DIR"] ?? scratchFixturesDir() });
 
+/** Ask a Question with its own model calls already recorded — the ordinary Replay Mode run. */
+const askRecorded = async (
+  question: string,
+  responses: readonly LLMResponse[],
+  env: Record<string, string | undefined> = {},
+) => ask(question, { ...env, FIXTURES_DIR: await recorded(question, responses) });
+
 describe("the command-line entry point", () => {
   beforeAll(async () => {
     await loadEmbedder();
   });
 
-  it("reports the Route it assigned a money Question", async () => {
-    const { exitCode, output } = await ask("How much did we spend on payroll last quarter?");
+  it("answers a money Question, naming the Route and the agent that answered", async () => {
+    const question = "How much did we spend on payroll last quarter?";
+    const { exitCode, output } = await askRecorded(question, [
+      asksFor("finance_payroll_cost", { period: "Q3" }),
+      says("Payroll cost 1,096,000 USD in Q3, covering 48 people."),
+    ]);
 
     expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+finance/);
+    expect(output).toMatch(/Agent:\s+Finance Agent/);
+    expect(output).toContain("Payroll cost 1,096,000 USD in Q3, covering 48 people.");
+  });
+
+  it("grounds the answer in what a Scoped Tool actually returned", async () => {
+    // The figure in the answer is the figure in `dataset.json`, having travelled
+    // through the real tool: the Fixture holds what the model said, but the
+    // number it was given came from the Finance Agent's own Dataset.
+    const { output } = await askRecorded(CASH, CASH_TURN);
+
+    expect(output).toContain("1,248,000");
+    expect(output).toContain("13 months of runway");
   });
 
   it("reports the Route it assigned a people Question", async () => {
@@ -50,7 +85,7 @@ describe("the command-line entry point", () => {
   });
 
   it("prints the per-bank similarity scores behind every verdict", async () => {
-    const { output } = await ask("What's our cash position right now?");
+    const { output } = await askRecorded(CASH, CASH_TURN);
 
     for (const bank of ["finance", "hr", "both"]) {
       expect(output, `expected a score line for the ${bank} bank`).toMatch(
@@ -60,7 +95,7 @@ describe("the command-line entry point", () => {
   });
 
   it("names the Local Pass as the stage when it placed the Question itself", async () => {
-    const { output } = await ask("What's our cash position right now?");
+    const { output } = await askRecorded(CASH, CASH_TURN);
 
     expect(output).toMatch(/Local Pass/);
     expect(output).not.toMatch(/Escalation/);
@@ -68,27 +103,41 @@ describe("the command-line entry point", () => {
 
   it("never escalates a Question the Local Pass places: an empty Fixture set is enough", async () => {
     // With no Fixtures on disk, any call through the seam would fail loudly.
-    // That this run succeeds is the assertion — the free path stayed free.
-    const { exitCode, output } = await ask("Did revenue go up or down in Q3?");
+    // That this run succeeds is the assertion — the free path stayed free. The
+    // Question is a people one because no agent answers those yet; the same
+    // property for money Questions is asserted on the recorded Fixtures in
+    // `record.test.ts`, where an Escalation would be visible as a recording.
+    const { exitCode, output } = await ask("How many people work in the sales team?");
 
     expect(exitCode).toBe(0);
-    expect(output).toMatch(/Route:\s+finance/);
+    expect(output).toMatch(/Route:\s+hr/);
   });
 
   it("escalates an Abstention and reports the Route Escalation placed it as", async () => {
-    const { exitCode, output } = await ask(UNPLACEABLE, {
-      FIXTURES_DIR: await recorded(UNPLACEABLE, "hr"),
-    });
+    const { exitCode, output } = await askRecorded(UNPLACEABLE, [says("hr")]);
 
     expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+hr/);
     expect(output).toMatch(/Escalation/);
   });
 
+  it("hands a misrouted Question to the agent, which refuses rather than inventing", async () => {
+    // A Router mistake, played out end to end: Escalation places a Question
+    // that belongs to neither domain as `finance`, and the Finance Agent says
+    // what it cannot see instead of producing a plausible number.
+    const refusal =
+      "That is not something I can answer. I can see this company's revenue, expenses, cash " +
+      "position, and total payroll cost, and nothing else.";
+    const { exitCode, output } = await askRecorded(UNPLACEABLE, [says("finance"), says(refusal)]);
+
+    expect(exitCode).toBe(0);
+    expect(output).toMatch(/Agent:\s+Finance Agent/);
+    expect(output).toContain(refusal);
+    expect(output).not.toMatch(/\$\d|\d{3},\d{3}/);
+  });
+
   it("asks for clarification when Escalation returns `unclear`", async () => {
-    const { exitCode, output } = await ask(UNPLACEABLE, {
-      FIXTURES_DIR: await recorded(UNPLACEABLE, "unclear"),
-    });
+    const { exitCode, output } = await askRecorded(UNPLACEABLE, [says("unclear")]);
 
     expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+unclear/);
@@ -96,9 +145,7 @@ describe("the command-line entry point", () => {
   });
 
   it("still shows the scores when it asks for clarification, so the miss is debuggable", async () => {
-    const { output } = await ask(UNPLACEABLE, {
-      FIXTURES_DIR: await recorded(UNPLACEABLE, "unclear"),
-    });
+    const { output } = await askRecorded(UNPLACEABLE, [says("unclear")]);
 
     expect(output).toMatch(/finance\s+0\.\d+/);
   });
@@ -131,7 +178,7 @@ describe("the command-line entry point", () => {
   });
 
   it("stays in Replay Mode when only a key is set, and says so", async () => {
-    const { exitCode, notice } = await ask("What's our cash position right now?", {
+    const { exitCode, notice } = await askRecorded(CASH, CASH_TURN, {
       [API_KEY_VARIABLE]: "sk-ant-not-a-real-key",
     });
 
@@ -146,20 +193,23 @@ describe("the command-line entry point", () => {
     expect(output).toMatch(/usage/i);
   });
 
-  it("runs from a clean shell with no API key present", async () => {
+  it("answers from a clean shell with no API key present", async () => {
     const cliPath = fileURLToPath(new URL("./cli.ts", import.meta.url));
     const repoRoot = path.dirname(path.dirname(cliPath));
-    const env = { ...process.env };
+    const env: Record<string, string | undefined> = {
+      ...process.env,
+      FIXTURES_DIR: await recorded(CASH, CASH_TURN),
+    };
     for (const key of Object.keys(env)) {
       if (/API_KEY|ANTHROPIC/i.test(key)) delete env[key];
     }
 
-    const { stdout } = await promisify(execFile)(
-      "npx",
-      ["tsx", cliPath, "What's our cash position right now?"],
-      { cwd: repoRoot, env },
-    );
+    const { stdout } = await promisify(execFile)("npx", ["tsx", cliPath, CASH], {
+      cwd: repoRoot,
+      env,
+    });
 
     expect(stdout).toMatch(/Route:\s+finance/);
+    expect(stdout).toContain(CASH_ANSWER);
   });
 });

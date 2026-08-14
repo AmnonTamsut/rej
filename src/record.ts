@@ -1,9 +1,10 @@
+import { askQuestion } from "./ask.js";
 import { type CliResult, runAsCommand } from "./command.js";
 import type { LLMClient } from "./llm/client.js";
 import { recordingClient } from "./llm/fixtures.js";
 import { liveClient } from "./llm/live-client.js";
 import { API_KEY_VARIABLE, environmentFrom } from "./llm/mode.js";
-import { routeQuestion, type RouterVerdict } from "./router/router.js";
+import type { RouterVerdict } from "./router/router.js";
 
 /**
  * The record command: a Live Mode run whose purpose is to write Fixtures.
@@ -31,16 +32,19 @@ export type RecordedRun = {
   readonly question: string;
   readonly route: RouterVerdict["route"];
   readonly stage: RouterVerdict["stage"];
-  /** Whether this Question cost a call, and so left a Fixture behind. */
-  readonly recorded: boolean;
+  /** How many model calls this Question cost, and so how many Fixtures it left behind. */
+  readonly calls: number;
 };
 
 /**
- * Run each Question through the real Router with a recording client in place.
+ * Run each Question through the real system with a recording client in place.
  *
- * Questions the Local Pass places cost nothing and record nothing: recording
- * captures what the system actually asks the model, so the free path stays
- * absent from the Fixture set rather than being recorded for symmetry.
+ * The whole path is recorded, not just the routing: an Escalation is one call
+ * and a Specialist Agent's turn is several, and Replay Mode needs all of them
+ * to serve the same run afterwards. Questions the Local Pass places and no
+ * agent answers cost nothing and record nothing — recording captures what the
+ * system actually asks the model, so the free path stays absent from the
+ * Fixture set rather than being recorded for symmetry.
  */
 export const recordFixtures = async (
   questions: readonly string[],
@@ -59,23 +63,26 @@ export const recordFixtures = async (
       },
     };
 
-    const verdict = await routeQuestion(question, counted);
-    runs.push({ question, route: verdict.route, stage: verdict.stage, recorded: calls > 0 });
+    const { verdict } = await askQuestion(question, counted);
+    runs.push({ question, route: verdict.route, stage: verdict.stage, calls });
   }
 
   return runs;
 };
 
 const summarize = (runs: readonly RecordedRun[], fixturesDir: string): string => {
-  const recorded = runs.filter((run) => run.recorded).length;
+  const calls = runs.reduce((total, run) => total + run.calls, 0);
+  const paid = runs.filter((run) => run.calls > 0).length;
 
   return [
     ...runs.map(
       (run) =>
-        `${run.recorded ? "recorded" : "free    "}  ${run.route.padEnd(8)}${run.question}`,
+        `${run.calls > 0 ? `${run.calls} call${run.calls === 1 ? " " : "s"}` : "free   "}  ` +
+        `${run.route.padEnd(8)}${run.question}`,
     ),
     "",
-    `${recorded} of ${runs.length} Questions reached the model; Fixtures are in ${fixturesDir}`,
+    `${paid} of ${runs.length} Questions reached the model, for ${calls} calls in total; ` +
+      `Fixtures are in ${fixturesDir}`,
   ].join("\n");
 };
 

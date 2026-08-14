@@ -1,0 +1,78 @@
+{
+  "company": "Cherry Host",
+  "currency": "USD",
+  "fiscalYear": "FY2025",
+  "revenue": [
+    { "period": "Q1", "total": 1180000, "recurring": 1010000, "services": 170000 },
+    { "period": "Q2", "total": 1320000, "recurring": 1142000, "services": 178000 },
+    { "period": "Q3", "total": 1490000, "recurring": 1305000, "services": 185000 },
+    { "period": "year to date", "total": 3990000, "recurring": 3457000, "services": 533000 }
+  ],
+  "expenses": [
+    {
+      "period": "Q1",
+      "total": 1571000,
+      "byCategory": {
+        "payroll": 980000,
+        "hosting": 210000,
+        "marketing": 175000,
+        "software": 96000,
+        "office": 62000,
+        "other": 48000
+      }
+    },
+    {
+      "period": "Q2",
+      "total": 1662000,
+      "byCategory": {
+        "payroll": 1024000,
+        "hosting": 226000,
+        "marketing": 198000,
+        "software": 101000,
+        "office": 62000,
+        "other": 51000
+      }
+    },
+    {
+      "period": "Q3",
+      "total": 1778000,
+      "byCategory": {
+        "payroll": 1096000,
+        "hosting": 241000,
+        "marketing": 214000,
+        "software": 108000,
+        "office": 64000,
+        "other": 55000
+      }
+    },
+    {
+      "period": "year to date",
+      "total": 5011000,
+      "byCategory": {
+        "payroll": 3100000,
+        "hosting": 677000,
+        "marketing": 587000,
+        "software": 305000,
+        "office": 188000,
+        "other": 154000
+      }
+    }
+  ],
+  "cash": {
+    "asOf": "2025-09-30",
+    "balance": 1248000,
+    "monthlyBurn": 96000,
+    "runwayMonths": 13
+  },
+  "payroll": [
+    { "period": "Q1", "totalCost": 980000, "employerContributions": 214000, "headcountCovered": 44 },
+    { "period": "Q2", "totalCost": 1024000, "employerContributions": 223000, "headcountCovered": 46 },
+    { "period": "Q3", "totalCost": 1096000, "employerContributions": 239000, "headcountCovered": 48 },
+    {
+      "period": "year to date",
+      "totalCost": 3100000,
+      "employerContributions": 676000,
+      "headcountCovered": 48
+    }
+  ]
+}

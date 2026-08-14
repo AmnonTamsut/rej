@@ -1,16 +1,32 @@
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
+import { askQuestion } from "./ask.js";
+import type { LLMRequest } from "./llm/client.js";
 import { replayClient } from "./llm/fixtures.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
-import { scratchFixturesDir, standInClient } from "./llm/testing.js";
+import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
 import { recordFixtures, runRecord } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
+import { ESCALATION_PROMPT } from "./router/escalation.js";
 import { routeQuestion } from "./router/router.js";
 
 const PLACED = "How much did we spend on payroll last quarter?";
 const UNPLACEABLE = "Write me a poem about a cat.";
 
+/** A recorded finance turn: the agent reads one Scoped Tool, then answers. */
+const FINANCE_TURN = [
+  asksFor("finance_payroll_cost", { period: "Q3" }),
+  says("Payroll cost 1,096,000 USD in Q3."),
+];
+
 const fixtureCount = (dir: string) => readdirSync(dir).filter((f) => f.endsWith(".json")).length;
+
+/** The requests a recording pass captured, read back off disk. */
+const recordedRequests = (dir: string): LLMRequest[] =>
+  readdirSync(dir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => JSON.parse(readFileSync(path.join(dir, file), "utf8")).request as LLMRequest);
 
 describe("the record command", () => {
   beforeAll(async () => {
@@ -27,10 +43,36 @@ describe("the record command", () => {
     expect(verdict.stage).toBe("escalation");
   });
 
-  it("records nothing for a Question the Local Pass places, because nothing was asked", async () => {
+  it("records a Specialist Agent's whole turn, so Replay Mode can serve it back", async () => {
+    // A turn is several exchanges, and a recording that caught only the routing
+    // would replay as a Fixture miss halfway through the answer.
     const dir = scratchFixturesDir();
 
-    await recordFixtures([PLACED], standInClient("hr"), dir);
+    await recordFixtures([PLACED], scriptedClient(FINANCE_TURN), dir);
+    const { answer } = await askQuestion(PLACED, replayClient(dir));
+
+    expect(answer?.agent).toBe("Finance Agent");
+    expect(answer?.answer).toBe("Payroll cost 1,096,000 USD in Q3.");
+  });
+
+  it("never records an Escalation for a Question the Local Pass places", async () => {
+    // The failure this guards is silent and expensive: escalating on every
+    // Question passes every other test in the suite while spending on each run.
+    // Now that answering a Question costs calls of its own, the guard is about
+    // what those calls were — the Fixture set is where that is visible.
+    const dir = scratchFixturesDir();
+
+    await recordFixtures([PLACED], scriptedClient(FINANCE_TURN), dir);
+
+    expect(recordedRequests(dir).filter((request) => request.system === ESCALATION_PROMPT)).toEqual(
+      [],
+    );
+  });
+
+  it("records nothing for a Question no agent answers and the Local Pass places", async () => {
+    const dir = scratchFixturesDir();
+
+    await recordFixtures(["How many people work in the sales team?"], standInClient("hr"), dir);
 
     expect(fixtureCount(dir)).toBe(0);
   });
@@ -38,11 +80,15 @@ describe("the record command", () => {
   it("reports what each Question cost, so a recording pass can be counted", async () => {
     const dir = scratchFixturesDir();
 
-    const report = await recordFixtures([PLACED, UNPLACEABLE], standInClient("hr"), dir);
+    const report = await recordFixtures(
+      [PLACED, UNPLACEABLE],
+      scriptedClient([...FINANCE_TURN, says("unclear")]),
+      dir,
+    );
 
     expect(report).toEqual([
-      { question: PLACED, route: "finance", stage: "local-pass", recorded: false },
-      { question: UNPLACEABLE, route: "hr", stage: "escalation", recorded: true },
+      { question: PLACED, route: "finance", stage: "local-pass", calls: 2 },
+      { question: UNPLACEABLE, route: "unclear", stage: "escalation", calls: 1 },
     ]);
   });
 });
