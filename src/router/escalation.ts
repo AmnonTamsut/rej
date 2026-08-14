@@ -1,17 +1,15 @@
-import type { Route } from "../domain/route.js";
+import { ROUTES, type Route } from "../domain/route.js";
 import type { LLMClient } from "../llm/client.js";
 import { oneShot, textOf } from "../llm/client.js";
 
 /**
- * The Router's second stage: place a Question the Local Pass abstained on.
+ * Escalation: place a Question the Local Pass abstained on.
  *
  * One call, no tools, no history — the smallest request the API takes, because
  * this is the only routing step that spends and it runs under a hard budget
  * cap. It is always on: there is no flag that disables it and no pure-local
  * mode, per ADR 0005.
  */
-
-const ROUTES: readonly Route[] = ["finance", "hr", "both", "unclear"];
 
 /**
  * Escalation's system prompt.
@@ -40,9 +38,9 @@ export const ESCALATION_PROMPT = [
  * `unclear` asks the operator to rephrase, which is recoverable.
  */
 const routeNamedIn = (answer: string): Route => {
-  const named = ROUTES.filter((route) => new RegExp(`\\b${route}\\b`, "i").test(answer));
+  const [named, ...others] = ROUTES.filter((route) => new RegExp(`\\b${route}\\b`, "i").test(answer));
 
-  return named.length === 1 ? named[0]! : "unclear";
+  return named !== undefined && others.length === 0 ? named : "unclear";
 };
 
 export const escalate = async (question: string, client: LLMClient): Promise<Route> =>

@@ -1,7 +1,5 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { type CliResult, runAsCommand } from "./command.js";
 import { API_KEY_VARIABLE, chooseMode, clientFor, environmentFrom, LIVE_FLAG } from "./llm/mode.js";
-import { loadEmbedder } from "./router/embedder.js";
 import { rankBanks, type BankScores } from "./router/local-pass.js";
 import { routeQuestion, type RoutingStage } from "./router/router.js";
 import { SCORE_FLOOR } from "./router/thresholds.js";
@@ -35,13 +33,6 @@ const CLARIFICATION = [
   "(headcount, salaries, vacancies, attrition) — or both?",
 ].join("\n");
 
-export type CliResult = {
-  readonly exitCode: number;
-  readonly output: string;
-  /** Something to say on stderr about how the run is configured, or `null`. */
-  readonly notice: string | null;
-};
-
 /**
  * The top of the system: a Question in, the Router's verdict out.
  *
@@ -52,7 +43,7 @@ export type CliResult = {
  */
 export const runCli = async (
   argv: readonly string[],
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined>,
 ): Promise<CliResult> => {
   const flags = argv.filter((arg) => arg.startsWith("--"));
   const unknown = flags.filter((flag) => flag !== LIVE_FLAG);
@@ -103,15 +94,4 @@ export const runCli = async (
   }
 };
 
-const invokedDirectly =
-  process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedDirectly) {
-  // Load the model — and announce the first-run download — before any output,
-  // so a 25MB fetch never looks like the Router hanging on the Question.
-  await loadEmbedder();
-  const { exitCode, output, notice } = await runCli(process.argv.slice(2), process.env);
-  if (notice !== null) process.stderr.write(`${notice}\n`);
-  process.stdout.write(`${output}\n`);
-  process.exitCode = exitCode;
-}
+await runAsCommand(import.meta.url, () => runCli(process.argv.slice(2), process.env));

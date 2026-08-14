@@ -129,7 +129,7 @@ const writeFixture = (dir: string, request: LLMRequest, response: LLMResponse): 
  * answering with something plausible — are the two ways a replay layer stops
  * being evidence of anything, so neither is available here.
  */
-export const replayClient = (dir: string = DEFAULT_FIXTURES_DIR): LLMClient => ({
+export const replayClient = (dir: string): LLMClient => ({
   complete: async (request) => readFixture(dir, request),
 });
 
@@ -139,7 +139,7 @@ export const replayClient = (dir: string = DEFAULT_FIXTURES_DIR): LLMClient => (
  * Only the record command builds one of these, and it wraps the live adapter,
  * so a Fixture can only ever come from a real Live Mode call.
  */
-export const recordingClient = (inner: LLMClient, dir: string = DEFAULT_FIXTURES_DIR): LLMClient => ({
+export const recordingClient = (inner: LLMClient, dir: string): LLMClient => ({
   complete: async (request) => {
     const response = await inner.complete(request);
     writeFixture(dir, request, response);

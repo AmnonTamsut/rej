@@ -16,4 +16,7 @@ export type Route = "finance" | "hr" | "both" | "unclear";
  */
 export type LocalRoute = Exclude<Route, "unclear">;
 
+/** Every Route, as data — the list Escalation reads a verdict against. */
+export const ROUTES: readonly Route[] = ["finance", "hr", "both", "unclear"];
+
 export const LOCAL_ROUTES: readonly LocalRoute[] = ["finance", "hr", "both"];

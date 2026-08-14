@@ -1,12 +1,11 @@
 import { execFile } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { beforeAll, describe, expect, it } from "vitest";
-import type { LLMClient } from "./llm/client.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
+import { scratchFixturesDir, standInClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
 
@@ -35,10 +34,6 @@ const filesContaining = (needle: string): string[] =>
     .filter((file) => readFileSync(file, "utf8").includes(needle))
     .map((file) => path.relative(repoRoot, file));
 
-const answering = (text: string): LLMClient => ({
-  complete: async () => ({ content: [{ type: "text", text }] }),
-});
-
 /**
  * Escalation makes this the first ticket in which the system can spend. These
  * tests are the guard on that: the default path still runs with no key, and the
@@ -63,8 +58,8 @@ describe("running with no key and no network", () => {
 
   it("serves an Escalation from a Fixture with every outbound connection blocked", async () => {
     const question = "Write me a poem about a cat.";
-    const fixturesDir = mkdtempSync(path.join(tmpdir(), "fixtures-"));
-    await recordFixtures([question], answering("hr"), fixturesDir);
+    const fixturesDir = scratchFixturesDir();
+    await recordFixtures([question], standInClient("hr"), fixturesDir);
 
     const { stdout } = await run("npx", ["tsx", "src/cli.ts", question], {
       cwd: repoRoot,

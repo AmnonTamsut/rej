@@ -1,28 +1,17 @@
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { LLMClient, LLMRequest, LLMResponse } from "./client.js";
+import type { LLMRequest } from "./client.js";
 import { oneShot } from "./client.js";
 import { fixtureKey } from "./fixture-key.js";
 import { RECORD_COMMAND, recordingClient, replayClient } from "./fixtures.js";
-
-const fixturesDir = () => mkdtempSync(path.join(tmpdir(), "fixtures-"));
+import { scratchFixturesDir, standInClient } from "./testing.js";
 
 const REQUEST = oneShot("Place the Question.", "Should we hire more people?");
 
-/**
- * A stand-in for the live adapter. This is the one substitution the suite
- * permits — at the `LLMClient` seam, standing in for the API rather than for
- * anything of ours.
- */
-const answering = (text: string): LLMClient => ({
-  complete: async (): Promise<LLMResponse> => ({ content: [{ type: "text", text }] }),
-});
-
 /** Record through the real recording path — Fixtures are never written by hand. */
 const recordInto = async (dir: string, request: LLMRequest, text: string): Promise<void> => {
-  await recordingClient(answering(text), dir).complete(request);
+  await recordingClient(standInClient(text), dir).complete(request);
 };
 
 const soleFixtureFile = (dir: string): string => {
@@ -41,7 +30,7 @@ const messageFrom = async (promise: Promise<unknown>): Promise<string> => {
 
 describe("Fixtures", () => {
   it("serves a recorded response back to the same request", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
     await recordInto(dir, REQUEST, "both");
 
     const response = await replayClient(dir).complete(REQUEST);
@@ -50,7 +39,7 @@ describe("Fixtures", () => {
   });
 
   it("fails on a miss, naming the missing key and the record command", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
 
     const message = await messageFrom(replayClient(dir).complete(REQUEST));
 
@@ -59,7 +48,7 @@ describe("Fixtures", () => {
   });
 
   it("stops serving a recording once the system prompt it was recorded against is edited", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
     await recordInto(dir, REQUEST, "both");
     const edited: LLMRequest = { ...REQUEST, system: `${REQUEST.system} Answer in one word.` };
 
@@ -67,7 +56,7 @@ describe("Fixtures", () => {
   });
 
   it("stops serving a recording once a tool schema it was recorded against is edited", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
     const withTool: LLMRequest = {
       ...REQUEST,
       tools: [{ name: "cash_position", description: "Cash.", inputSchema: { type: "object" } }],
@@ -82,7 +71,7 @@ describe("Fixtures", () => {
   });
 
   it("refuses a Fixture whose recorded answer was edited by hand", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
     await recordInto(dir, REQUEST, "both");
     const file = soleFixtureFile(dir);
     writeFileSync(file, readFileSync(file, "utf8").replace('"both"', '"finance"'));
@@ -91,7 +80,7 @@ describe("Fixtures", () => {
   });
 
   it("refuses a Fixture whose recorded request was edited by hand", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
     await recordInto(dir, REQUEST, "both");
     const file = soleFixtureFile(dir);
     writeFileSync(file, readFileSync(file, "utf8").replace(REQUEST.system, "Something else."));
@@ -100,9 +89,9 @@ describe("Fixtures", () => {
   });
 
   it("hands back what the client behind it answered while recording", async () => {
-    const dir = fixturesDir();
+    const dir = scratchFixturesDir();
 
-    const response = await recordingClient(answering("hr"), dir).complete(REQUEST);
+    const response = await recordingClient(standInClient("hr"), dir).complete(REQUEST);
 
     expect(response.content).toEqual([{ type: "text", text: "hr" }]);
   });

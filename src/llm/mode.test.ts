@@ -1,10 +1,8 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { oneShot } from "./client.js";
 import { DEFAULT_FIXTURES_DIR } from "./fixtures.js";
 import { chooseMode, clientFor, environmentFrom, LIVE_FLAG } from "./mode.js";
+import { scratchFixturesDir } from "./testing.js";
 
 const KEY = "sk-ant-not-a-real-key";
 
@@ -53,7 +51,7 @@ describe("the environment a run reads", () => {
 
 describe("the client a run gets", () => {
   it("is the replay adapter in Replay Mode: a miss is an error, not a call", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "fixtures-"));
+    const dir = scratchFixturesDir();
     const client = clientFor({ mode: "replay", notice: null }, { apiKey: undefined, fixturesDir: dir });
 
     await expect(client.complete(oneShot("Place it.", "Anything?"))).rejects.toThrow(/no Fixture/i);

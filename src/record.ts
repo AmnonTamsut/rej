@@ -1,11 +1,8 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import type { CliResult } from "./cli.js";
+import { type CliResult, runAsCommand } from "./command.js";
 import type { LLMClient } from "./llm/client.js";
 import { recordingClient } from "./llm/fixtures.js";
 import { liveClient } from "./llm/live-client.js";
 import { API_KEY_VARIABLE, environmentFrom } from "./llm/mode.js";
-import { loadEmbedder } from "./router/embedder.js";
 import { routeQuestion, type RouterVerdict } from "./router/router.js";
 
 /**
@@ -98,16 +95,11 @@ export const runRecord = async (
     environment.fixturesDir,
   );
 
-  return { exitCode: 0, output: summarize(runs, environment.fixturesDir), notice: null };
+  return {
+    exitCode: 0,
+    output: summarize(runs, environment.fixturesDir),
+    notice: "Live Mode: this run called the API and spent real budget.",
+  };
 };
 
-const invokedDirectly =
-  process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedDirectly) {
-  process.stderr.write("Live Mode: this run calls the API and spends real budget.\n");
-  await loadEmbedder();
-  const { exitCode, output } = await runRecord(process.argv.slice(2), process.env);
-  process.stdout.write(`${output}\n`);
-  process.exitCode = exitCode;
-}
+await runAsCommand(import.meta.url, () => runRecord(process.argv.slice(2), process.env));

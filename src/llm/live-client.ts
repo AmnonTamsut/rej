@@ -73,6 +73,9 @@ export const liveClient = (apiKey: string): LLMClient => {
   const anthropic = new Anthropic({ apiKey });
 
   return {
-    complete: async (request) => fromApiContent((await anthropic.messages.create(toApiRequest(request))).content),
+    complete: async (request) => {
+      const message = await anthropic.messages.create(toApiRequest(request));
+      return fromApiContent(message.content);
+    },
   };
 };

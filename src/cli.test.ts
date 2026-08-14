@@ -1,38 +1,29 @@
 import { execFile } from "node:child_process";
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "./cli.js";
-import type { LLMClient } from "./llm/client.js";
 import { RECORD_COMMAND } from "./llm/fixtures.js";
 import { API_KEY_VARIABLE, LIVE_FLAG } from "./llm/mode.js";
+import { scratchFixturesDir, standInClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
 
 const UNPLACEABLE = "Write me a poem about a cat.";
-
-const emptyFixtures = () => mkdtempSync(path.join(tmpdir(), "fixtures-"));
-
-/** Stands in for the live adapter, so a recording pass can happen with no key. */
-const answering = (text: string): LLMClient => ({
-  complete: async () => ({ content: [{ type: "text", text }] }),
-});
 
 /**
  * A fixtures directory holding a real recording of this Question's Escalation,
  * written by the record command rather than by hand.
  */
 const recorded = async (question: string, route: string): Promise<string> => {
-  const dir = emptyFixtures();
-  await recordFixtures([question], answering(route), dir);
+  const dir = scratchFixturesDir();
+  await recordFixtures([question], standInClient(route), dir);
   return dir;
 };
 
 const ask = (question: string, env: Record<string, string | undefined> = {}) =>
-  runCli([question], { ...env, FIXTURES_DIR: env["FIXTURES_DIR"] ?? emptyFixtures() });
+  runCli([question], { ...env, FIXTURES_DIR: env["FIXTURES_DIR"] ?? scratchFixturesDir() });
 
 describe("the command-line entry point", () => {
   beforeAll(async () => {
