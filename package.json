@@ -1,0 +1,21 @@
+{
+  "name": "agent-routing-assessment",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Two Specialist Agents behind a deterministic Router",
+  "scripts": {
+    "ask": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.7.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.7",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
