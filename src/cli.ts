@@ -1,4 +1,5 @@
 import { ANSWERED_ROUTES, askQuestion } from "./ask.js";
+import type { NumberAudit } from "./audit/number-audit.js";
 import { type CliResult, runAsCommand } from "./command.js";
 import { API_KEY_VARIABLE, chooseMode, clientFor, environmentFrom, LIVE_FLAG } from "./llm/mode.js";
 import { rankBanks, type BankScores } from "./router/local-pass.js";
@@ -38,6 +39,31 @@ const formatScores = (scores: BankScores): string =>
 const UNANSWERED =
   `This build answers ${ANSWERED_ROUTES.join(", ")} Questions. Other Routes are ` +
   `reported but not yet answered.`;
+
+/**
+ * What the Number Audit's verdict looks like to the operator.
+ *
+ * Reported on every answer, not only on a failure. A check that is invisible
+ * when it passes is a check nobody knows they are relying on, and the line that
+ * matters — the failure — reads as an exception to something rather than as an
+ * unfamiliar warning.
+ *
+ * A failure does not change the exit code. The run did what it was asked and
+ * the answer is worth reading; what it is not is worth acting on the numbers
+ * of, and that is what the words say. Hiding the answer would leave an operator
+ * unable to see what the agent claimed and where it went wrong.
+ */
+const auditReport = (audit: NumberAudit): string => {
+  if (audit.passed) {
+    return "Number Audit: passed — every figure above appears in a Scoped Tool result.";
+  }
+
+  return [
+    `Number Audit: FAILED — no Scoped Tool result accounts for ${audit.unaccounted.join(", ")}.`,
+    "The answer above is unaudited: it states a figure this run cannot point at a source for,",
+    "so do not act on its numbers.",
+  ].join("\n");
+};
 
 const CLARIFICATION = [
   "Neither the Local Pass nor Escalation could place this Question, so I would",
@@ -88,7 +114,7 @@ export const runCli = async (
       `Route:    ${verdict.route.padEnd(8)}  (${STAGE_LABEL[verdict.stage]})`,
     ];
     if (answer !== null) {
-      lines.push(`Agent:    ${answer.agent}`, "", answer.answer);
+      lines.push(`Agent:    ${answer.agent}`, "", answer.answer, "", auditReport(answer.audit));
     } else if (verdict.route !== "unclear") {
       lines.push("", UNANSWERED);
     }

@@ -1,3 +1,4 @@
+import { auditNumbers, type NumberAudit } from "../audit/number-audit.js";
 import type {
   ContentBlock,
   JsonObject,
@@ -61,6 +62,15 @@ export type AgentAnswer = {
    * anything: the Number Audit checks the figures in the answer against these.
    */
   readonly toolResults: readonly ToolResult[];
+  /**
+   * The Number Audit's verdict on this answer.
+   *
+   * Carried on the answer rather than run by whoever displays it, so there is
+   * no path by which an answer reaches an operator un-audited: an
+   * `AgentAnswer` that exists has been checked. The entry point's job is to
+   * report the verdict, not to remember to ask for one.
+   */
+  readonly audit: NumberAudit;
 };
 
 /**
@@ -126,7 +136,8 @@ export const askAgent = async (
 
     const requested = response.content.filter(isToolUse);
     if (requested.length === 0) {
-      return { agent: agent.name, answer: textOf(response), toolResults };
+      const answer = textOf(response);
+      return { agent: agent.name, answer, toolResults, audit: auditNumbers(answer, toolResults) };
     }
 
     const results = requested.map((use) => {

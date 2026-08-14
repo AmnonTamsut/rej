@@ -72,6 +72,29 @@ describe("the command-line entry point", () => {
     expect(output).toContain("13 months of runway");
   });
 
+  it("reports the Number Audit alongside an answer whose figures all check out", async () => {
+    const { output } = await askRecorded(CASH, CASH_TURN);
+
+    expect(output).toMatch(/Number Audit: passed/);
+  });
+
+  it("marks an answer as unaudited when a figure in it came from nowhere, and names the figure", async () => {
+    // The failure this whole check exists for, driven through the entry point:
+    // a recorded turn in which the model states a figure the Scoped Tool never
+    // returned. The operator is told which figure it was, and is told before
+    // acting on it — the answer is never presented as though it passed.
+    const { exitCode, output } = await askRecorded(CASH, [
+      asksFor("finance_cash_position"),
+      says("You are holding 2,400,000 USD, which is 13 months of runway."),
+    ]);
+
+    expect(exitCode).toBe(0);
+    expect(output).toMatch(/Number Audit: FAILED/);
+    expect(output).toContain("2,400,000");
+    expect(output).toMatch(/unaudited/i);
+    expect(output).not.toMatch(/Number Audit: passed/);
+  });
+
   it("answers a people Question through the same entry point, naming the agent that answered", async () => {
     // The operator's whole interface to both domains: the same command, the
     // same output, and no flag selecting an agent. The Route names which
