@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -8,6 +8,7 @@ import { API_KEY_VARIABLE } from "./llm/mode.js";
 import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
+import { sourceFiles } from "./testing.js";
 
 const srcDir = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = path.dirname(srcDir);
@@ -19,15 +20,6 @@ const NO_NETWORK = {
   HTTP_PROXY: "http://127.0.0.1:1",
   HTTPS_PROXY: "http://127.0.0.1:1",
 };
-
-const sourceFiles = (dir: string): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return sourceFiles(full);
-    return entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")
-      ? [full]
-      : [];
-  });
 
 const filesContaining = (needle: string): string[] =>
   sourceFiles(srcDir)
