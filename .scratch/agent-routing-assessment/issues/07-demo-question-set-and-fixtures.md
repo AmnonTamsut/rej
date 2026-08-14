@@ -10,7 +10,9 @@ After the pass, the entire suite and the entire demo must run from a clean clone
 
 The recorded-not-written rule needs to be stated where a contributor will actually hit it, not only in an ADR. A Fixture edited by hand to make a test pass destroys the thing the demo is claiming.
 
-**Blocked by:** 06 — Agent Meeting for the `both` Route.
+**Blocked by:** 06 — Agent Meeting for the `both` Route; 09 — Widen the Exemplar Banks (which must land first, or this pass records against Banks that are about to change).
+
+**Note from 09:** `SURVEY_QUESTIONS` in `src/survey.ts` already holds 25 Questions written as the candidates this set would be drawn from, and `npm run survey` prices them — 5 of them abstain and would reach Escalation. It is not the demo set and does not decide it: the survey deliberately avoids phrasings copied from an Exemplar Bank, so it asks "Should we be hiring right now?" where the demo must say "Should we hire more people?" in the assessment's own words. Choose the demo set on its own terms, then bring the two into step so the Abstention rate keeps being measured over what the demo actually asks.
 
 **Status:** ready-for-agent
 

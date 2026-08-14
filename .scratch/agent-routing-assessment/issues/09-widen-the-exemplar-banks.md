@@ -16,13 +16,27 @@ Widening a Bank is not free of consequence. The thresholds are calibrated agains
 
 **Blocks:** 07 — Demo Question set and the full Fixture set. (The file number is append-only and does not reflect the working order.)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A Question naming an individual rather than a role is placed as `hr` by the Local Pass instead of abstaining
-- [ ] Each newly covered phrasing enters the routing table as a row that fails before the Bank edit and passes after it
-- [ ] No Router logic changes: the only edits are Exemplar Bank data and, if re-calibrated, the two thresholds
-- [ ] Every Question already in the routing table keeps its verdict, including the two sitting nearest the top-two margin
-- [ ] Every score quoted in a threshold comment is re-measured and corrected, or removed rather than left stale
-- [ ] The added exemplars are a deliberate, reviewable set — each one a phrasing an operator would plausibly type, not bulk-generated filler
-- [ ] The phrasing families deliberately left uncovered are written down where the next person tuning the Banks will find them
-- [ ] The Abstention rate over the demo Question set is measured before and after, so the change is shown to reduce spend rather than assumed to
+- [x] A Question naming an individual rather than a role is placed as `hr` by the Local Pass instead of abstaining
+- [x] Each newly covered phrasing enters the routing table as a row that fails before the Bank edit and passes after it
+- [x] No Router logic changes: the only edits are Exemplar Bank data and, if re-calibrated, the two thresholds
+- [x] Every Question already in the routing table keeps its verdict, including the two sitting nearest the top-two margin
+- [x] Every score quoted in a threshold comment is re-measured and corrected, or removed rather than left stale
+- [x] The added exemplars are a deliberate, reviewable set — each one a phrasing an operator would plausibly type, not bulk-generated filler
+- [x] The phrasing families deliberately left uncovered are written down where the next person tuning the Banks will find them
+- [x] The Abstention rate over the demo Question set is measured before and after, so the change is shown to reduce spend rather than assumed to
+
+**What the Banks gained:** ten phrasings, all in `hr.json`, in two families. Eight cover a Question that names an individual — what someone earns, when they joined, which team they are on, their job title, whether they are a contractor. Two cover a pay Question that names nobody: "Who is the highest paid person here?" and "Who is the most expensive person on the payroll?". `finance.json` and `both.json` are untouched, and so are the two thresholds — the numbers in `thresholds.ts` changed only in their comments, which now quote re-measured scores.
+
+**On the second family.** The named-individual family was the ticket's brief; the superlative one was found while measuring it and covered because its failure was worse. "Who is our most expensive person?" scored finance 0.535 against hr 0.301 and was placed `both` — a salary Question, which only the HR Agent can see a salary for, sent to a Route that convenes the Finance Agent to help answer it. An Abstention costs one small call; that costs an Agent Meeting and puts the wrong domain in the room. It is now hr at 0.738.
+
+**On the eighth line:** the demo Question set does not exist yet — ticket 07 chooses it — so the rate is measured over the 25 Questions it will be drawn from, written down as `SURVEY_QUESTIONS` in `src/survey.ts` and runnable as `npm run survey`. Over that set the Abstention rate went from 36% (9 of 25) to 20% (5 of 25). The five that remain are the ones that should: office hours, the holiday policy, the printer, a Question in French, and the poem. A test pins that exact list, because an Abstention creeping back in is spend on every run rather than a visible misroute — the failure ADR 0005 calls the quiet one. When ticket 07 settles the demo set, the two should be brought into step.
+
+The survey deliberately asks nothing in an Exemplar Bank's own words, and a second test enforces it: a Question copied from a Bank scores about 1.0 against itself and would flatter the rate into meaning nothing. That is why the survey says "Should we be hiring right now?" where the demo will say "Should we hire more people?".
+
+**On the fourth line:** widening one Bank moved Questions the edit was not aimed at, which is the risk the line is guarding. "What are we paying the engineering team in total?" tightened from a top-two gap of 0.015 to 0.012 and "How many roles are we trying to fill?" loosened from 0.061 to 0.068 — both keep their verdicts, but the margins moved without being touched, so the whole routing table is the check after a Bank edit rather than the new rows.
+
+**On the survey being larger than the data edit.** The Bank change is ten lines of JSON; the measurement around it is a command, a set of Questions, and three tests. That is deliberate: the eighth line asks for a rate measured before and after, and a number written down once is a number nobody can re-measure after the next Bank edit. The code review flagged the imbalance and it is accepted rather than trimmed — `npm run survey` is what makes the next widening's claim checkable too.
+
+**What was left uncovered, and why:** written up in `docs/exemplar-bank-coverage.md` with a measured score against each. A terse Question built around a name ("When did Ben Carter start?", 0.336) stays under the floor because in five words the unknown name is most of the text — more exemplars moved it by hundredths, and the floor cannot come down to meet it without also placing "What time does the office open?" at 0.340. Reporting lines are hr but absent from the Dataset, so placing them buys nothing. Other languages score 0.169–0.193 against an English-only embedding model, which is the wrong model rather than a thin Bank. Slang and typos were measured and already work ("whats our headcont" places hr at 0.590), so nothing was added for them. Topics no Dataset owns are supposed to abstain, and adding exemplars for them would route them confidently to an agent that cannot answer them.

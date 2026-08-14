@@ -9,6 +9,10 @@ import { LOCAL_ROUTES, type LocalRoute } from "../../domain/route.js";
  * Banks are plain JSON sitting beside this file. Adding a phrasing to one
  * changes routing with no edit to Router logic — that is the point of loading
  * them as data rather than declaring them in code.
+ *
+ * Before adding one, read `docs/exemplar-bank-coverage.md`. It records which
+ * families of phrasing these Banks cover, which are left to Escalation on
+ * purpose, and how to tell filling a gap from moving a threshold.
  */
 export type ExemplarBank = {
   readonly route: LocalRoute;

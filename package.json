@@ -7,6 +7,7 @@
   "scripts": {
     "ask": "tsx src/cli.ts",
     "record": "tsx src/record.ts",
+    "survey": "tsx src/survey.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
