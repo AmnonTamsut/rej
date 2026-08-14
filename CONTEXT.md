@@ -79,3 +79,13 @@ _Avoid_: mock mode, offline mode, cassette mode
 **Fixture**:
 A stored API response captured from an earlier Live Mode run, used to serve Replay Mode.
 _Avoid_: mock, stub, cassette, snapshot
+
+### Building the system
+
+**Ticket**:
+One unit of shippable behaviour, with its own acceptance criteria, written down before the work on it starts. There are nine.
+_Avoid_: issue, story, task
+
+**Slice**:
+How one Ticket is built: a failing test that describes the behaviour, the smallest code that turns it green, then a review pass. A Slice is not finished when the test goes green.
+_Avoid_: iteration, TDD cycle

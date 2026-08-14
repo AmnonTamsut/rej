@@ -39,6 +39,96 @@ const packageScripts = (): Readonly<Record<string, string>> =>
 const fencedBlocks = (markdown: string): string[] =>
   [...markdown.matchAll(/```[a-z]*\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
 
+/**
+ * The marker a shortened transcript ends with, on a line of its own.
+ *
+ * A README long enough to go unread is its own kind of wrong, so a transcript is
+ * allowed to stop early. What is not allowed is stopping early invisibly: the
+ * marker is what tells a reader the run continued, and it is what lets the check
+ * below stay exact about the part that is shown.
+ */
+const ELISION_MARKER = "…";
+
+/**
+ * Whether a transcript shown in the README is a faithful view of a real run.
+ *
+ * A whole transcript must match the run to the character, as before. A
+ * transcript ending in the marker must be a *line-wise prefix* of the run —
+ * every line shown was printed by the run, whole and in order, and only the tail
+ * is missing. The rule is deliberately one-sided: it buys brevity without buying
+ * the ability to show output the system never produced, which is the only thing
+ * this check was ever protecting.
+ *
+ * Line-wise rather than character-wise on purpose. A raw string prefix would
+ * accept a line cut off in the middle, which is how a figure becomes a different
+ * figure — "$1,248,000" shortened to "$1,248" is a prefix and a lie.
+ *
+ * Two degenerate shortenings fail. A marker with nothing shown above it claims
+ * to be a transcript of a run it does not quote at all, and a marker with the
+ * whole run above it promises output the run never had — both are lies about the
+ * run in the same way an invented line is.
+ */
+const isFaithfulTranscript = (shown: string, actual: string): boolean => {
+  const lines = shown.split("\n");
+  if (lines[lines.length - 1] !== ELISION_MARKER) return shown === actual;
+
+  const quoted = lines.slice(0, -1);
+  while (quoted[quoted.length - 1] === "") quoted.pop();
+  const printed = actual.split("\n");
+
+  return (
+    quoted.length > 0 &&
+    quoted.length < printed.length &&
+    quoted.every((line, index) => line === printed[index])
+  );
+};
+
+describe("reading a transcript the README shortened", () => {
+  const run = ["Question: How much cash?", "", "Route:    finance   (Local Pass)", "$1,248,000"].join(
+    "\n",
+  );
+
+  it("accepts a transcript shown whole", () => {
+    expect(isFaithfulTranscript(run, run)).toBe(true);
+  });
+
+  it("rejects a transcript that differs from the run", () => {
+    expect(isFaithfulTranscript(run.replace("$1,248,000", "$2,000,000"), run)).toBe(false);
+  });
+
+  const shortenedTo = (...lines: string[]): string => [...lines, "", ELISION_MARKER].join("\n");
+
+  it("accepts a shortened transcript whose shown lines were really printed", () => {
+    const shown = shortenedTo("Question: How much cash?", "", "Route:    finance   (Local Pass)");
+
+    expect(isFaithfulTranscript(shown, run)).toBe(true);
+  });
+
+  it("rejects a shortened transcript whose shown lines were edited", () => {
+    const shown = shortenedTo("Question: How much cash?", "", "Route:    hr        (Local Pass)");
+
+    expect(isFaithfulTranscript(shown, run)).toBe(false);
+  });
+
+  it("rejects a line cut off mid-way, which is how a figure becomes another figure", () => {
+    const shown = shortenedTo("Question: How much cash?", "", "Route:    fin");
+
+    expect(isFaithfulTranscript(shown, run)).toBe(false);
+  });
+
+  it("rejects an elision that elides nothing", () => {
+    expect(isFaithfulTranscript(`${run}\n\n${ELISION_MARKER}`, run)).toBe(false);
+  });
+
+  it("rejects a marker quoting no output at all", () => {
+    expect(isFaithfulTranscript(ELISION_MARKER, run)).toBe(false);
+  });
+
+  it("does not treat a marker inside a line as an elision", () => {
+    expect(isFaithfulTranscript(`Question: how much…`, run)).toBe(false);
+  });
+});
+
 describe("the README's run instructions", () => {
   /** What `npm` itself provides, so telling a reader to run it needs no script. */
   const BUILT_IN = ["install", "test", "ci"];
@@ -115,7 +205,9 @@ describe("the README's sample runs", () => {
       const { exitCode, output } = await runCli([question], {});
 
       expect(exitCode, question).toBe(0);
-      expect(shown, question).toBe(output.trim());
+      // Whole or shortened, everything shown was printed by the run — see
+      // `isFaithfulTranscript` for what shortening is allowed to hide.
+      expect(isFaithfulTranscript(shown, output.trim()), question).toBe(true);
     }
   });
 
