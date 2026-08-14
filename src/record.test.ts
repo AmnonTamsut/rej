@@ -1,14 +1,11 @@
-import { readFileSync, readdirSync } from "node:fs";
-import path from "node:path";
+import { readdirSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { askQuestion } from "./ask.js";
-import type { LLMRequest } from "./llm/client.js";
 import { replayClient } from "./llm/fixtures.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
 import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
 import { recordFixtures, runRecord } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
-import { ESCALATION_PROMPT } from "./router/escalation.js";
 import { routeQuestion } from "./router/router.js";
 
 const PLACED = "How much did we spend on payroll last quarter?";
@@ -21,12 +18,6 @@ const FINANCE_TURN = [
 ];
 
 const fixtureCount = (dir: string) => readdirSync(dir).filter((f) => f.endsWith(".json")).length;
-
-/** The requests a recording pass captured, read back off disk. */
-const recordedRequests = (dir: string): LLMRequest[] =>
-  readdirSync(dir)
-    .filter((file) => file.endsWith(".json"))
-    .map((file) => JSON.parse(readFileSync(path.join(dir, file), "utf8")).request as LLMRequest);
 
 describe("the record command", () => {
   beforeAll(async () => {
@@ -55,18 +46,17 @@ describe("the record command", () => {
     expect(answer?.answer).toBe("Payroll cost 1,096,000 USD in Q3.");
   });
 
-  it("never records an Escalation for a Question the Local Pass places", async () => {
+  it("never escalates a Question the Local Pass places, even now that answering costs calls", async () => {
     // The failure this guards is silent and expensive: escalating on every
     // Question passes every other test in the suite while spending on each run.
-    // Now that answering a Question costs calls of its own, the guard is about
-    // what those calls were — the Fixture set is where that is visible.
+    // A recorded run reports the stage that placed each Question, and only a
+    // Question that reached Escalation can come back as one — so the report is
+    // the evidence, without reaching into what was sent.
     const dir = scratchFixturesDir();
 
-    await recordFixtures([PLACED], scriptedClient(FINANCE_TURN), dir);
+    const [run] = await recordFixtures([PLACED], scriptedClient(FINANCE_TURN), dir);
 
-    expect(recordedRequests(dir).filter((request) => request.system === ESCALATION_PROMPT)).toEqual(
-      [],
-    );
+    expect(run?.stage).toBe("local-pass");
   });
 
   it("records nothing for a Question no agent answers and the Local Pass places", async () => {

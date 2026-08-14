@@ -1,4 +1,4 @@
-import { AGENT_FOR, askQuestion } from "./ask.js";
+import { ANSWERED_ROUTES, askQuestion } from "./ask.js";
 import { type CliResult, runAsCommand } from "./command.js";
 import { API_KEY_VARIABLE, chooseMode, clientFor, environmentFrom, LIVE_FLAG } from "./llm/mode.js";
 import { rankBanks, type BankScores } from "./router/local-pass.js";
@@ -33,11 +33,10 @@ const formatScores = (scores: BankScores): string =>
  *
  * Reported rather than left blank: an operator who gets a Route and no answer
  * should be told that is the build they are running, not left wondering whether
- * the answer went missing. It reads the Routes off the wiring, so filling the
- * table in is the only edit needed to retire this line.
+ * the answer went missing.
  */
 const UNANSWERED =
-  `This build answers ${Object.keys(AGENT_FOR).join(", ")} Questions. Other Routes are ` +
+  `This build answers ${ANSWERED_ROUTES.join(", ")} Questions. Other Routes are ` +
   `reported but not yet answered.`;
 
 const CLARIFICATION = [

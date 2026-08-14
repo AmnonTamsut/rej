@@ -12,25 +12,6 @@ import type { JsonObject, LLMClient, LLMRequest, LLMResponse } from "./client.js
  * instead of the system.
  */
 
-/**
- * A client that answers with a fixed text and keeps what it was asked.
- *
- * The record of requests is what makes the negative behaviours observable:
- * that Escalation sends no tools and no history, and that a Question the Local
- * Pass places is never asked about at all.
- */
-export const standInClient = (text: string): LLMClient & { readonly asked: LLMRequest[] } => {
-  const asked: LLMRequest[] = [];
-
-  return {
-    asked,
-    complete: async (request) => {
-      asked.push(request);
-      return { content: [{ type: "text", text }] };
-    },
-  };
-};
-
 /** A response in which the model answers in prose. */
 export const says = (text: string): LLMResponse => ({ content: [{ type: "text", text }] });
 
@@ -45,35 +26,50 @@ export const asksFor = (name: string, input: JsonObject = {}): LLMResponse => ({
 });
 
 /**
- * A client that plays a prepared sequence of responses.
+ * A stand-in client, which keeps what it was asked.
  *
- * A tool-calling turn is several exchanges, so a single fixed answer cannot
- * drive one. This is still the same single substitution — a stand-in at the
- * `LLMClient` seam — and it is still the only one the suite permits. Running
- * off the end of the script is an error rather than a repeat of the last
- * response: a turn that asked for more than the test scripted is a test that
- * has stopped describing what it thinks it does.
+ * The record of requests is what makes the negative behaviours observable:
+ * that Escalation sends no tools and no history, and that a Question the Local
+ * Pass places is never asked about at all.
  */
-export const scriptedClient = (
-  responses: readonly LLMResponse[],
-): LLMClient & { readonly asked: LLMRequest[] } => {
+export type StandIn = LLMClient & { readonly asked: LLMRequest[] };
+
+/** Answer from a function of how many times the client has been asked already. */
+const standIn = (respond: (asked: number) => LLMResponse): StandIn => {
   const asked: LLMRequest[] = [];
 
   return {
     asked,
     complete: async (request) => {
-      const response = responses[asked.length];
+      const response = respond(asked.length);
       asked.push(request);
-      if (response === undefined) {
-        throw new Error(
-          `The stand-in client was scripted with ${responses.length} responses and asked for ` +
-            `${asked.length}.`,
-        );
-      }
       return response;
     },
   };
 };
+
+/** A client that answers with the same text however often it is asked. */
+export const standInClient = (text: string): StandIn => standIn(() => says(text));
+
+/**
+ * A client that plays a prepared sequence of responses.
+ *
+ * A tool-calling turn is several exchanges, so a single fixed answer cannot
+ * drive one. Running off the end of the script is an error rather than a repeat
+ * of the last response: a turn that asked for more than the test scripted is a
+ * test that has stopped describing what it thinks it does.
+ */
+export const scriptedClient = (responses: readonly LLMResponse[]): StandIn =>
+  standIn((asked) => {
+    const response = responses[asked];
+    if (response === undefined) {
+      throw new Error(
+        `The stand-in client was scripted with ${responses.length} responses and asked for ` +
+          `${asked + 1}.`,
+      );
+    }
+    return response;
+  });
 
 /** An empty directory to record Fixtures into, so no test writes into the shipped set. */
 export const scratchFixturesDir = (): string => mkdtempSync(path.join(tmpdir(), "fixtures-"));

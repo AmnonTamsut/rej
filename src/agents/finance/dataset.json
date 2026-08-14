@@ -12,7 +12,7 @@
     {
       "period": "Q1",
       "total": 1571000,
-      "byCategory": {
+      "byLine": {
         "payroll": 980000,
         "hosting": 210000,
         "marketing": 175000,
@@ -24,7 +24,7 @@
     {
       "period": "Q2",
       "total": 1662000,
-      "byCategory": {
+      "byLine": {
         "payroll": 1024000,
         "hosting": 226000,
         "marketing": 198000,
@@ -36,7 +36,7 @@
     {
       "period": "Q3",
       "total": 1778000,
-      "byCategory": {
+      "byLine": {
         "payroll": 1096000,
         "hosting": 241000,
         "marketing": 214000,
@@ -48,7 +48,7 @@
     {
       "period": "year to date",
       "total": 5011000,
-      "byCategory": {
+      "byLine": {
         "payroll": 3100000,
         "hosting": 677000,
         "marketing": 587000,

@@ -27,8 +27,8 @@ export type RevenueRow = {
   readonly services: number;
 };
 
-/** Expense categories, as the books are kept. `payroll` here is the same figure the payroll tool reports. */
-export type ExpenseCategories = {
+/** The expense lines, as the books keep them. `payroll` here is the same figure the payroll tool reports. */
+export type ExpenseLines = {
   readonly payroll: number;
   readonly hosting: number;
   readonly marketing: number;
@@ -40,7 +40,7 @@ export type ExpenseCategories = {
 export type ExpenseRow = {
   readonly period: Period;
   readonly total: number;
-  readonly byCategory: ExpenseCategories;
+  readonly byLine: ExpenseLines;
 };
 
 export type CashPosition = {
@@ -93,8 +93,9 @@ const datasetFile = fileURLToPath(new URL("./dataset.json", import.meta.url));
 /**
  * The Dataset is JSON on disk rather than a literal in code so that it reads as
  * data — the thing a Scoped Tool looks things up in, not something logic can
- * quietly compute. The shape it is cast to is checked by
- * `dataset.test.ts`, which also holds the books to their own arithmetic.
+ * quietly compute. The cast below is a claim about a file that ships in this
+ * repo, not about anything a caller supplies; `dataset.test.ts` holds it to the
+ * part that would actually break an answer, which is the arithmetic.
  */
 export const FINANCE_DATASET: FinanceDataset = deepFreeze(
   JSON.parse(readFileSync(datasetFile, "utf8")) as FinanceDataset,

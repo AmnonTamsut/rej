@@ -10,7 +10,7 @@ const QUARTERS = PERIODS.filter((period) => period !== "year to date");
 const sum = (values: readonly number[]): number => values.reduce((total, v) => total + v, 0);
 
 /**
- * The Dataset is mock data, but it is not arbitrary: a reviewer who adds up the
+ * The Dataset is invented, but it is not arbitrary: a reviewer who adds up the
  * figures in an answer should find they agree. These are the sums that have to
  * hold for the demo to survive being read carefully.
  */
@@ -32,10 +32,10 @@ describe("the Finance Dataset", () => {
     }
   });
 
-  it("breaks expenses into categories that add up to the total", () => {
+  it("breaks expenses into lines that add up to the total", () => {
     for (const period of PERIODS) {
       const row = expenses(period);
-      expect(sum(Object.values(row?.byCategory ?? {})), `expenses for ${period}`).toBe(row?.total);
+      expect(sum(Object.values(row?.byLine ?? {})), `expenses for ${period}`).toBe(row?.total);
     }
   });
 
@@ -52,7 +52,7 @@ describe("the Finance Dataset", () => {
     // Two views that disagree is the kind of detail that sinks a demo.
     for (const period of PERIODS) {
       expect(payroll(period)?.totalCost, `payroll for ${period}`).toBe(
-        expenses(period)?.byCategory.payroll,
+        expenses(period)?.byLine.payroll,
       );
     }
   });
@@ -68,6 +68,6 @@ describe("the Finance Dataset", () => {
   it("is frozen, so nothing downstream can edit the books", () => {
     expect(Object.isFrozen(FINANCE_DATASET)).toBe(true);
     expect(Object.isFrozen(FINANCE_DATASET.revenue[0])).toBe(true);
-    expect(Object.isFrozen(FINANCE_DATASET.expenses[0]?.byCategory)).toBe(true);
+    expect(Object.isFrozen(FINANCE_DATASET.expenses[0]?.byLine)).toBe(true);
   });
 });

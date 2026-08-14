@@ -121,10 +121,16 @@ describe("the command-line entry point", () => {
     expect(output).toMatch(/Escalation/);
   });
 
-  it("hands a misrouted Question to the agent, which refuses rather than inventing", async () => {
+  it("hands a misrouted Question to the agent, and reports the refusal as the answer", async () => {
     // A Router mistake, played out end to end: Escalation places a Question
-    // that belongs to neither domain as `finance`, and the Finance Agent says
-    // what it cannot see instead of producing a plausible number.
+    // that belongs to neither domain as `finance`, and the Finance Agent's
+    // refusal reaches the operator as the answer.
+    //
+    // What this pins is the path, not the model's judgement — in Replay Mode
+    // the refusal is whatever was recorded. That the agent refuses at all is
+    // the system prompt's job (`FINANCE_SYSTEM_PROMPT`, asserted in
+    // `isolation.test.ts`), and it is a recorded Live Mode turn in the demo set
+    // that shows it happening for real.
     const refusal =
       "That is not something I can answer. I can see this company's revenue, expenses, cash " +
       "position, and total payroll cost, and nothing else.";

@@ -34,12 +34,22 @@ const { currency } = FINANCE_DATASET;
  * came from the model rather than the Dataset has no business arriving there
  * dressed as evidence.
  */
-const NO_SUCH_PERIOD: JsonObject = {
+const NO_SUCH_PERIOD: JsonObject = Object.freeze({
   error: `No figures for that period. Ask for one of: ${PERIODS.join(", ")}.`,
-};
+});
 
 const periodIn = (input: JsonObject): Period | undefined =>
   PERIODS.find((known) => known === input["period"]);
+
+/**
+ * A tool result: a Dataset row, stamped with the currency and frozen.
+ *
+ * Frozen for the same reason the Dataset is. A tool result is evidence the
+ * Number Audit will check an answer against, and evidence that could be edited
+ * on the way to the audit is not evidence.
+ */
+const result = <T extends object>(row: T): JsonValue =>
+  Object.freeze({ ...row, currency }) as JsonValue;
 
 /** A period-taking tool: look the row up, or say which periods exist. */
 const byPeriod = <T extends { readonly period: Period }>(
@@ -50,7 +60,7 @@ const byPeriod = <T extends { readonly period: Period }>(
   if (period === undefined) return NO_SUCH_PERIOD;
 
   const row = rowFor(rows, period);
-  return row === undefined ? NO_SUCH_PERIOD : { ...row, currency };
+  return row === undefined ? NO_SUCH_PERIOD : result(row);
 };
 
 const periodInput = (what: string): JsonObject => ({
@@ -81,7 +91,7 @@ export const expensesTool: ScopedTool = {
     name: "finance_expenses",
     description:
       "Company expenses for a quarter or the year to date: the total, and the breakdown by " +
-      "category (payroll, hosting, marketing, software, office, other).",
+      "expense line (payroll, hosting, marketing, software, office, other).",
     inputSchema: periodInput("expenses"),
   },
   read: (input): JsonValue => byPeriod<ExpenseRow>(FINANCE_DATASET.expenses, input),
@@ -95,7 +105,7 @@ export const cashPositionTool: ScopedTool = {
       "that follows from them, as of the date on the result.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
-  read: (): JsonValue => ({ ...FINANCE_DATASET.cash, currency }),
+  read: (): JsonValue => result(FINANCE_DATASET.cash),
 };
 
 export const payrollCostTool: ScopedTool = {

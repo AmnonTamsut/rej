@@ -83,7 +83,11 @@ const isToolUse = (block: ContentBlock): block is Extract<ContentBlock, { type: 
  * told what it actually has and can answer from that, which is a better failure
  * than a crashed turn. What it never gets is the tool.
  */
-const read = (agent: SpecialistAgent, name: string, input: JsonObject): JsonValue => {
+const runRequestedTool = (
+  agent: SpecialistAgent,
+  name: string,
+  input: JsonObject,
+): JsonValue => {
   const tool = agent.tools.find((candidate) => candidate.schema.name === name);
   if (tool === undefined) {
     return {
@@ -126,7 +130,7 @@ export const askAgent = async (
     }
 
     const results = requested.map((use) => {
-      const result = read(agent, use.name, use.input);
+      const result = runRequestedTool(agent, use.name, use.input);
       toolResults.push({ tool: use.name, input: use.input, result });
       return { use, result };
     });

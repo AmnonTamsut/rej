@@ -20,9 +20,18 @@ import { routeQuestion, type RouterVerdict } from "./router/router.js";
  * routed and reported but not answered — `unclear` never reaches an agent by
  * design, and the rest arrive as later tickets fill the table in.
  */
-export const AGENT_FOR: Partial<Record<Route, SpecialistAgent>> = {
+const AGENT_FOR: Partial<Record<Route, SpecialistAgent>> = {
   finance: financeAgent,
 };
+
+/**
+ * The Routes a Specialist Agent answers today, read off the table itself.
+ *
+ * The entry point tells the operator this rather than leaving a Route with a
+ * silent absence where its answer should be. Filling the table in is the only
+ * edit that changes what it says.
+ */
+export const ANSWERED_ROUTES: readonly Route[] = Object.keys(AGENT_FOR) as Route[];
 
 export type AnsweredQuestion = {
   readonly question: string;

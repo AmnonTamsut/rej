@@ -31,12 +31,12 @@ describe("the Finance Agent's Scoped Tools", () => {
     });
   });
 
-  it("reports expenses broken down by category", () => {
+  it("reports expenses broken down by line", () => {
     expect(expensesTool.read({ period: "Q2" })).toEqual({
       period: "Q2",
       currency: "USD",
       total: 1662000,
-      byCategory: {
+      byLine: {
         payroll: 1024000,
         hosting: 226000,
         marketing: 198000,
@@ -110,13 +110,16 @@ describe("the Finance Agent's Scoped Tools", () => {
     expect(FINANCE_DATASET.cash.balance).toBe(1248000);
   });
 
-  it("returns figures the caller cannot use to edit the Dataset behind them", () => {
-    const before = FINANCE_DATASET.expenses[0]?.byCategory.payroll;
-    const result = expensesTool.read({ period: "Q1" }) as { byCategory: { payroll: number } };
+  it("returns results that cannot be edited on the way to being audited", () => {
+    const before = FINANCE_DATASET.expenses[0]?.byLine.payroll;
+    const result = expensesTool.read({ period: "Q1" }) as { total: number; byLine: { payroll: number } };
 
     expect(() => {
-      result.byCategory.payroll = 1;
+      result.total = 1;
     }).toThrow();
-    expect(FINANCE_DATASET.expenses[0]?.byCategory.payroll).toBe(before);
+    expect(() => {
+      result.byLine.payroll = 1;
+    }).toThrow();
+    expect(FINANCE_DATASET.expenses[0]?.byLine.payroll).toBe(before);
   });
 });

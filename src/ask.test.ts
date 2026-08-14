@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { AGENT_FOR, askQuestion } from "./ask.js";
+import { askQuestion } from "./ask.js";
 import { asksFor, says, scriptedClient } from "./llm/testing.js";
 import { loadEmbedder } from "./router/embedder.js";
 
@@ -58,10 +58,5 @@ describe("asking the system a Question", () => {
 
     expect(verdict.route).toBe("unclear");
     expect(answer).toBeNull();
-  });
-
-  it("never sends a Question to an agent that does not own its Route", () => {
-    expect(AGENT_FOR["unclear"]).toBeUndefined();
-    expect(AGENT_FOR["finance"]?.name).toBe("Finance Agent");
   });
 });

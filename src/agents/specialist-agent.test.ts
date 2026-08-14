@@ -7,6 +7,11 @@ import { askAgent, MAX_TOOL_TURNS, type ScopedTool, type SpecialistAgent } from 
  * A Specialist Agent built for this test, so the runtime is exercised without
  * either real agent standing in for it. What the Finance Agent does with the
  * loop is tested through the entry point; what the loop does is tested here.
+ *
+ * Every assertion below is on the `AgentAnswer` the loop returns. Nothing here
+ * asserts on an assembled prompt, on the shape of a message sent to the model,
+ * or on how many times the model was asked — those are the loop's private
+ * business, and a suite that pins them cannot refactor it.
  */
 const tool = (name: string, result: JsonObject): ScopedTool => ({
   schema: { name, description: `Returns ${name}.`, inputSchema: { type: "object" } },
