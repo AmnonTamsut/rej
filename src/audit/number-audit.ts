@@ -17,13 +17,12 @@ import type { ToolResult } from "../agents/specialist-agent.js";
  *
  * # The rule
  *
- * Both sides are read the same way: a figure is a run of digits, optionally
- * grouped in thousands and optionally with a decimal part. The answer's figures
- * are compared by value against the figures in the rendered tool results, and
- * anything left over is reported.
- *
- * Reading both sides with one rule is what makes the tolerances below fall out
- * rather than accumulate as special cases.
+ * Both sides are read the same way, and reading them with one rule is what
+ * makes the tolerances below fall out rather than accumulate as special cases.
+ * Text is read as three things: dates, which are whole values however they were
+ * written; period labels, which are names rather than figures; and numbers,
+ * which are compared by value. Every figure in the answer must be matched by
+ * one in the tool results, and anything left over is reported.
  *
  * # The tolerances, decided rather than discovered
  *
@@ -49,12 +48,21 @@ import type { ToolResult } from "../agents/specialist-agent.js";
  *   justify it, and percentages would become the one place an invented figure
  *   passed unchallenged. The audit checks provenance, not arithmetic. ADR 0006
  *   carries the reasoning.
- * - **Dates are read in parts on both sides.** `2025-09-30` in a tool result
- *   accounts for 2025, 9, and 30, so an answer that writes it as "30 September
- *   2025" is not reported as having invented a year. The cost is that a date
- *   puts small integers into evidence, which makes a small invented figure
- *   cheaper to account for than a large one. That is the right way round: the
- *   figures worth inventing are the money.
+ * - **A date is one value, not three numbers.** `2025-09-30`, `30 September
+ *   2025`, and `September 30, 2025` are the same date and each matches the
+ *   Dataset's `asOf`; a date written only as far as its month matches a date in
+ *   the same month. What a date is *not* is evidence for a bare number: an
+ *   answer claiming "30 months of runway" is reported even though the day of
+ *   the month is 30, which is the whole reason dates are read whole. The cost
+ *   is that a date written in some form this does not recognise — a bare year,
+ *   or a day and month with no year — reads as bare numbers and is reported.
+ * - **A quarter label is a period name.** `Q3` is what the Datasets call a
+ *   period, so it is read as a name on both sides rather than as the number 3.
+ *   The Finance Agent's prompt asks it to name the period, and the cash
+ *   position it is naming the period for carries a date rather than a quarter —
+ *   without this, doing as it was told would fail the audit. The audit checks
+ *   figures, not the labels an answer files them under; it would not catch a
+ *   real figure attributed to the wrong quarter either way.
  * - **Numbers written as words are not audited.** "forty-eight people" contains
  *   no figure and is not checked. Extending the audit to words would mean
  *   parsing English number phrases on both sides, which is a larger and less
@@ -62,37 +70,146 @@ import type { ToolResult } from "../agents/specialist-agent.js";
  *
  * # What counts as evidence
  *
- * The `result` a Scoped Tool returned, and nothing else. In particular not the
- * input the model asked with: a model that named a figure in a tool call, took
- * the error the tool returned, and then stated that figure would otherwise have
- * laundered it into an answer through the audit's own evidence.
+ * The `result` a Scoped Tool returned, rendered whole — its field names and any
+ * text it carries included, since a Scoped Tool's text is written from the
+ * Dataset's own vocabulary and never from the model's words (see the error
+ * constants in each agent's `tools.ts`).
+ *
+ * What is not evidence is the input the model asked with. A model that named a
+ * figure in a tool call, took the error the tool returned, and then stated that
+ * figure would otherwise have laundered it into an answer through the audit's
+ * own evidence.
  */
 
 /**
- * A figure in prose: digits, optional thousands groups, optional decimal part.
+ * A value read out of text: a number, or a date.
  *
- * Deliberately does not match a leading sign or a trailing `%` — both are prose
- * around the figure, and both are read the same way on either side by being
- * left out of the match.
+ * `value` is the form both sides are compared in — a number normalised
+ * (`1248000`), or a date as far as it was written (`2025-09-30`, or `2025-09`
+ * from "September 2025"). `written` is kept because it is what the operator is
+ * shown: a figure they can find in the answer by reading it.
  */
-const FIGURE = /\d+(?:,\d{3})*(?:\.\d+)?/g;
+type Figure = {
+  readonly written: string;
+  readonly value: string;
+  readonly isDate: boolean;
+};
 
-/** Every figure in a piece of text, as written and as a number. */
-const figuresIn = (text: string): { written: string; value: number }[] =>
-  [...text.matchAll(FIGURE)].map((match) => ({
-    written: match[0],
-    value: Number(match[0].replace(/,/g, "")),
-  }));
+/** What the Datasets call a period. A name, not a figure — see the tolerances above. */
+const QUARTER = /\bQ[1-4]\b/gi;
+
+const MONTHS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
+
+/** Month names and their three-letter forms, full name first so the longer match wins. */
+const MONTH = MONTHS.flatMap((month) => [month, month.slice(0, 3)]).join("|");
+
+const twoDigits = (value: string): string => value.padStart(2, "0");
+
+const monthNumber = (name: string): string =>
+  twoDigits(
+    String(MONTHS.findIndex((month) => month.startsWith(name.slice(0, 3).toLowerCase())) + 1),
+  );
+
+type DateForm = {
+  readonly pattern: RegExp;
+  /** The date the match names, as far as it was written. */
+  readonly dateIn: (parts: readonly (string | undefined)[]) => string;
+};
+
+/**
+ * The date forms both sides are read for, longest first.
+ *
+ * Order is load-bearing: a full date is taken before the month-and-year form
+ * can take half of it. Each pattern requires a four-digit year, so a date is
+ * recognised only when it is written in full — which is the point at which
+ * calling it a date rather than a run of numbers is safe.
+ */
+const DATE_FORMS: readonly DateForm[] = [
+  {
+    pattern: /(\d{4})-(\d{2})-(\d{2})/g,
+    dateIn: ([year = "", month = "", day = ""]) => `${year}-${month}-${day}`,
+  },
+  {
+    pattern: new RegExp(
+      `\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?\\b(${MONTH})\\b\\.?,?\\s+(\\d{4})\\b`,
+      "gi",
+    ),
+    dateIn: ([day = "", month = "", year = ""]) =>
+      `${year}-${monthNumber(month)}-${twoDigits(day)}`,
+  },
+  {
+    pattern: new RegExp(`\\b(${MONTH})\\b\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})\\b`, "gi"),
+    dateIn: ([month = "", day = "", year = ""]) =>
+      `${year}-${monthNumber(month)}-${twoDigits(day)}`,
+  },
+  {
+    pattern: new RegExp(`\\b(${MONTH})\\b\\.?\\s+(\\d{4})\\b`, "gi"),
+    dateIn: ([month = "", year = ""]) => `${year}-${monthNumber(month)}`,
+  },
+];
+
+/** A number in prose: digits, optional thousands groups, optional decimal part. */
+const NUMBER = /\d+(?:,\d{3})*(?:\.\d+)?/g;
+
+/**
+ * Every figure in a piece of text.
+ *
+ * Dates are taken out of the text as they are recognised, so their parts cannot
+ * come back as numbers afterwards. Period labels go the same way, and for the
+ * same reason.
+ */
+const figuresIn = (text: string): Figure[] => {
+  const figures: Figure[] = [];
+  let rest = text.replace(QUARTER, " ");
+
+  for (const { pattern, dateIn } of DATE_FORMS) {
+    for (const match of rest.matchAll(pattern)) {
+      figures.push({ written: match[0], value: dateIn(match.slice(1)), isDate: true });
+    }
+    rest = rest.replace(pattern, " ");
+  }
+
+  for (const match of rest.matchAll(NUMBER)) {
+    figures.push({
+      written: match[0],
+      value: String(Number(match[0].replace(/,/g, ""))),
+      isDate: false,
+    });
+  }
+
+  return figures;
+};
+
+/**
+ * Whether the tool results account for one figure of the answer.
+ *
+ * A date is matched by a date it names, so a month and year are accounted for
+ * by any date within that month. A number is matched only by a number: a date
+ * in the evidence never accounts for a bare figure in the answer.
+ */
+const accountedFor = (figure: Figure, evidence: readonly Figure[]): boolean =>
+  evidence.some((known) =>
+    figure.isDate
+      ? known.isDate && known.value.startsWith(figure.value)
+      : !known.isDate && known.value === figure.value,
+  );
 
 export type NumberAudit = {
   readonly passed: boolean;
-  /**
-   * The figures in the answer that no Scoped Tool result accounts for, as the
-   * answer wrote them.
-   *
-   * As written rather than as parsed, because this is what the operator is
-   * shown: a figure they can find in the paragraph above by reading it.
-   */
+  /** The figures in the answer that no Scoped Tool result accounts for, as the answer wrote them. */
   readonly unaccounted: readonly string[];
 };
 
@@ -102,22 +219,15 @@ export type NumberAudit = {
  * Takes the answer as text rather than an `AgentAnswer` so that an Agent
  * Meeting can hold each contribution and its synthesis to the same check.
  */
-export const auditNumbers = (
-  answer: string,
-  toolResults: readonly ToolResult[],
-): NumberAudit => {
-  const accounted = new Set(
-    toolResults.flatMap((result) =>
-      figuresIn(JSON.stringify(result.result)).map((figure) => figure.value),
-    ),
-  );
+export const auditNumbers = (answer: string, toolResults: readonly ToolResult[]): NumberAudit => {
+  const evidence = toolResults.flatMap((result) => figuresIn(JSON.stringify(result.result)));
 
   const unaccounted: string[] = [];
-  const reported = new Set<number>();
-  for (const { written, value } of figuresIn(answer)) {
-    if (accounted.has(value) || reported.has(value)) continue;
-    reported.add(value);
-    unaccounted.push(written);
+  const reported = new Set<string>();
+  for (const figure of figuresIn(answer)) {
+    if (accountedFor(figure, evidence) || reported.has(figure.value)) continue;
+    reported.add(figure.value);
+    unaccounted.push(figure.written);
   }
 
   return { passed: unaccounted.length === 0, unaccounted };

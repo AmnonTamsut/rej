@@ -122,10 +122,46 @@ describe("the Number Audit", () => {
     expect(audit.unaccounted).toEqual(["1.2"]);
   });
 
-  it("accounts for a date the answer restated in prose", () => {
-    // Dates are read in parts on both sides, so an answer that writes the
-    // Dataset's `asOf` as words is not reported as having invented a year.
-    const audit = auditNumbers("As of 30 September 2025 you hold 1,248,000 USD.", [cashPosition]);
+  it("accounts for a date however the answer wrote it", () => {
+    // A date is one value on both sides, so an answer that writes the Dataset's
+    // `asOf` in words is not reported as having invented a year.
+    for (const written of [
+      "2025-09-30",
+      "30 September 2025",
+      "September 30, 2025",
+      "the 30th of Sep. 2025",
+      "September 2025",
+    ]) {
+      const audit = auditNumbers(`As of ${written} you hold 1,248,000 USD.`, [cashPosition]);
+
+      expect(audit.passed, `${written} should read as the date the tool returned`).toBe(true);
+    }
+  });
+
+  it("does not let the parts of a date account for a figure", () => {
+    // The tempting shortcut — read `2025-09-30` as 2025, 9, and 30 — hands an
+    // answer a free 30 to claim as a month of runway. A date is matched whole
+    // for exactly this reason.
+    const audit = auditNumbers("You are holding 1,248,000 USD: 30 months of runway.", [
+      cashPosition,
+    ]);
+
+    expect(audit.passed).toBe(false);
+    expect(audit.unaccounted).toEqual(["30"]);
+  });
+
+  it("reports a date no tool result carries", () => {
+    const audit = auditNumbers("You were holding 1,248,000 USD as of 2024-12-31.", [cashPosition]);
+
+    expect(audit.unaccounted).toEqual(["2024-12-31"]);
+  });
+
+  it("reads a quarter label as the name of a period, not as a figure", () => {
+    // The Finance Agent is told to name the period it is answering for, and the
+    // cash position it names one for carries a date rather than a quarter. An
+    // audit that read `Q3` as the number 3 would fail an answer for doing as it
+    // was told.
+    const audit = auditNumbers("You are holding $1,248,000 as of Q3.", [cashPosition]);
 
     expect(audit.passed).toBe(true);
   });

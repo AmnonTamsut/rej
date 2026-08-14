@@ -66,7 +66,7 @@ export type AgentAnswer = {
    * The Number Audit's verdict on this answer.
    *
    * Carried on the answer rather than run by whoever displays it, so there is
-   * no path by which an answer reaches an operator un-audited: an
+   * no path by which an answer reaches an operator unaudited: an
    * `AgentAnswer` that exists has been checked. The entry point's job is to
    * report the verdict, not to remember to ask for one.
    */
