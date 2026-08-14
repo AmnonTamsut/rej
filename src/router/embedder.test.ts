@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -29,11 +29,20 @@ describe("the embedding model", () => {
     expect(notice).toContain(EMBEDDING_MODEL);
   });
 
-  it("says nothing once the model is cached, so later runs are quiet", () => {
+  it("says nothing once the weights are on disk, so later runs are quiet", () => {
     const cacheDir = tempCacheDir();
-    mkdirSync(path.join(cacheDir, EMBEDDING_MODEL), { recursive: true });
+    mkdirSync(path.join(cacheDir, EMBEDDING_MODEL, "onnx"), { recursive: true });
+    writeFileSync(path.join(cacheDir, EMBEDDING_MODEL, "onnx", "model_quantized.onnx"), "weights");
 
     expect(firstRunNotice(cacheDir)).toBeNull();
+  });
+
+  it("still announces when an interrupted download left the directory but no weights", () => {
+    const cacheDir = tempCacheDir();
+    mkdirSync(path.join(cacheDir, EMBEDDING_MODEL, "onnx"), { recursive: true });
+
+    // The re-fetch is the slow part, so this is the case that most needs saying.
+    expect(firstRunNotice(cacheDir)).not.toBeNull();
   });
 
   it("embeds text as unit vectors, so cosine similarity is their dot product", async () => {

@@ -1,13 +1,12 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { LocalRoute } from "./domain/route.js";
 import { loadEmbedder } from "./router/embedder.js";
-import type { BankScores } from "./router/local-pass.js";
+import { rankBanks, type BankScores } from "./router/local-pass.js";
 import { routeQuestion } from "./router/router.js";
 import { SCORE_FLOOR } from "./router/thresholds.js";
 
 const USAGE = [
-  "Usage: npm run ask -- \"<Question>\"",
+  'Usage: npm run ask -- "<Question>"',
   "",
   "Reports the Route the Router assigns a Question, with the per-bank",
   "similarity scores behind that verdict. Runs entirely locally: no API key,",
@@ -16,9 +15,8 @@ const USAGE = [
 
 /** Scores, best bank first, so a surprising verdict shows its working. */
 const formatScores = (scores: BankScores): string =>
-  (Object.entries(scores) as [LocalRoute, number][])
-    .sort((a, b) => b[1] - a[1])
-    .map(([route, score]) => `  ${route.padEnd(8)}${score.toFixed(3)}`)
+  rankBanks(scores)
+    .map(({ route, score }) => `  ${route.padEnd(8)}${score.toFixed(3)}`)
     .join("\n");
 
 const CLARIFICATION = [
@@ -43,12 +41,12 @@ export const runCli = async (argv: readonly string[]): Promise<CliResult> => {
   const verdict = await routeQuestion(question);
 
   const lines = [`Question: ${question}`, ""];
-  if (verdict.outcome === "routed") {
+  if (verdict.outcome === "placed") {
     lines.push(`Route:    ${verdict.route}`);
   } else {
-    // An Abstention is not a Route, so none is reported. It is also not
-    // `unclear`, which only Escalation can reach.
-    lines.push(`Route:    (none — the Local Pass abstained below the ${SCORE_FLOOR} score floor)`);
+    // Deliberately not printed under a "Route:" label: an Abstention is not a
+    // Route, and it is not `unclear` either — that one needs Escalation.
+    lines.push(`The Local Pass abstained: nothing cleared the ${SCORE_FLOOR} score floor.`);
   }
   lines.push("", "Similarity scores by Exemplar Bank:", formatScores(verdict.scores));
   if (verdict.outcome === "abstained") lines.push("", CLARIFICATION);
@@ -57,8 +55,7 @@ export const runCli = async (argv: readonly string[]): Promise<CliResult> => {
 };
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+  process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (invokedDirectly) {
   // Load the model — and announce the first-run download — before any output,

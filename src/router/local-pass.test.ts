@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { LocalRoute } from "../domain/route.js";
-import { localPass, type BankScores, type LocalPassVerdict } from "./local-pass.js";
+import { localPass, rankBanks, type BankScores, type LocalPassVerdict } from "./local-pass.js";
 import { loadEmbedder } from "./embedder.js";
 import { SCORE_FLOOR, TOP_TWO_MARGIN } from "./thresholds.js";
 
@@ -68,16 +68,17 @@ const CASES: readonly Case[] = [
 
 /** Scores on every failure, so a boundary miss says how close it was. */
 const diagnose = (question: string, expected: Expected, verdict: LocalPassVerdict): string => {
-  const ranked = (Object.entries(verdict.scores) as [LocalRoute, number][]).sort((a, b) => b[1] - a[1]);
-  const gap = (ranked[0]?.[1] ?? 0) - (ranked[1]?.[1] ?? 0);
+  const ranked = rankBanks(verdict.scores);
+  const best = ranked[0]?.score ?? 0;
+  const gap = best - (ranked[1]?.score ?? 0);
   const actual = verdict.outcome === "placed" ? verdict.route : "abstention";
 
   return [
     `Question:  ${question}`,
     `Expected:  ${expected}`,
     `Actual:    ${actual}`,
-    `Scores:    ${ranked.map(([route, score]) => `${route}=${score.toFixed(3)}`).join("  ")}`,
-    `Top-two gap ${gap.toFixed(3)} vs margin ${TOP_TWO_MARGIN}; best ${(ranked[0]?.[1] ?? 0).toFixed(3)} vs floor ${SCORE_FLOOR}`,
+    `Scores:    ${ranked.map(({ route, score }) => `${route}=${score.toFixed(3)}`).join("  ")}`,
+    `Top-two gap ${gap.toFixed(3)} vs margin ${TOP_TWO_MARGIN}; best ${best.toFixed(3)} vs floor ${SCORE_FLOOR}`,
   ].join("\n");
 };
 

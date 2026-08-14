@@ -6,6 +6,19 @@ import { SCORE_FLOOR, TOP_TWO_MARGIN } from "./thresholds.js";
 /** The Local Pass's similarity to each Exemplar Bank — the best-matching exemplar wins. */
 export type BankScores = Record<LocalRoute, number>;
 
+/** One bank's score, for reading the verdict back in the order it was decided. */
+export type BankScore = { readonly route: LocalRoute; readonly score: number };
+
+/**
+ * Scores best bank first — the order the two thresholds are applied in, and so
+ * the order that explains a verdict. Everything that shows scores to a human
+ * ranks them this way.
+ */
+export const rankBanks = (scores: BankScores): BankScore[] =>
+  (Object.entries(scores) as [LocalRoute, number][])
+    .map(([route, score]) => ({ route, score }))
+    .sort((a, b) => b.score - a.score);
+
 /**
  * The outcome of the Local Pass.
  *
@@ -74,8 +87,8 @@ export const localPassAgainst = async (
 };
 
 /**
- * The Router's first stage: place a Question against the shipped Exemplar Banks
- * without leaving the machine or spending anything.
+ * The Local Pass: place a Question against the shipped Exemplar Banks without
+ * leaving the machine or spending anything.
  */
 export const localPass = (question: string): Promise<LocalPassVerdict> =>
   localPassAgainst(question, EXEMPLAR_BANKS);

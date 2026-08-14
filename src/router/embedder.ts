@@ -6,6 +6,13 @@ import { env, pipeline, type FeatureExtractionPipeline } from "@huggingface/tran
 /** The local embedding model behind the Local Pass, per ADR 0002. */
 export const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 
+/**
+ * The quantized weights, which are what makes the download ~25MB rather than
+ * ~90MB. Routing compares similarities rather than reading absolute scores, so
+ * the precision lost to quantization costs nothing the thresholds care about.
+ */
+const MODEL_WEIGHTS = "onnx/model_quantized.onnx";
+
 /** Approximate on-disk size of the one-time model download. */
 export const EMBEDDING_MODEL_DOWNLOAD_MB = 25;
 
@@ -15,14 +22,15 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 export const MODEL_CACHE_DIR = path.join(repoRoot, ".model-cache");
 
 /**
- * The notice to show before loading the model, or `null` when the model is
- * already cached and loading it will be quiet and instant.
+ * The notice to show before loading the model, or `null` when the weights are
+ * already on disk and loading will be quiet and instant.
  *
- * A 25MB download with no explanation reads as a hang, so this is decided
- * before the load starts rather than reported while it runs.
+ * This checks for the weights file rather than the model directory: an
+ * interrupted download leaves the directory behind, and a run that silently
+ * re-fetches 25MB is exactly the hang this notice exists to prevent.
  */
 export const firstRunNotice = (cacheDir: string = MODEL_CACHE_DIR): string | null => {
-  if (existsSync(path.join(cacheDir, EMBEDDING_MODEL))) return null;
+  if (existsSync(path.join(cacheDir, EMBEDDING_MODEL, MODEL_WEIGHTS))) return null;
 
   return (
     `First run: downloading the ${EMBEDDING_MODEL} embedding model ` +
@@ -38,17 +46,15 @@ let extractor: Promise<FeatureExtractionPipeline> | undefined;
 
 /**
  * The embedding pipeline, loaded at most once per process and reused for every
- * Question. Loading is several seconds of work; doing it per Question would
- * make the Local Pass slower than the Escalation it exists to avoid.
+ * Question. Loading is seconds of work; doing it per Question would make the
+ * Local Pass slower than the Escalation it exists to avoid.
  */
-export const loadEmbedder = (
-  announce: (notice: string) => void = (notice) => process.stderr.write(`${notice}\n`),
-): Promise<FeatureExtractionPipeline> => {
+export const loadEmbedder = (): Promise<FeatureExtractionPipeline> => {
   if (extractor === undefined) {
     const notice = firstRunNotice();
-    if (notice !== null) announce(notice);
+    if (notice !== null) process.stderr.write(`${notice}\n`);
 
-    extractor = pipeline("feature-extraction", EMBEDDING_MODEL);
+    extractor = pipeline("feature-extraction", EMBEDDING_MODEL, { dtype: "q8" });
   }
   return extractor;
 };
