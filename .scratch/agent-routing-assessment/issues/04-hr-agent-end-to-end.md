@@ -12,16 +12,16 @@ Reuse the agent runtime from ticket 03. If it does not fit the HR Agent cleanly,
 
 **Blocked by:** 03 — Finance Agent answers money Questions end-to-end.
 
-**Status:** ready-for-agent
+**Status:** done — delivered by fde3f22
 
-- [ ] A people Question asked at the entry point routes `hr` and returns an answer grounded in HR Scoped Tool results
-- [ ] Money and people Questions are asked through the same entry point with no agent selection by the operator
-- [ ] The HR Agent is handed only its own tool schemas
-- [ ] Scoped Tools are read-only and tested directly as pure functions
-- [ ] A structural test asserts the HR Agent holds no tool returning company financials
-- [ ] A structural test asserts no tool instance is shared between the Finance Agent and the HR Agent
-- [ ] There is no shared Dataset, no shared data layer, and no tool that reads across the domain boundary
-- [ ] The system prompt states the agent's domain and what it cannot see
-- [ ] A Question outside the people domain produces a stated refusal
-- [ ] The agent runtime from ticket 03 is reused, not duplicated
-- [ ] The end-to-end path is tested through the entry point against Fixtures, with no key and no spend
+- [x] A people Question asked at the entry point routes `hr` and returns an answer grounded in HR Scoped Tool results
+- [x] Money and people Questions are asked through the same entry point with no agent selection by the operator
+- [x] The HR Agent is handed only its own tool schemas
+- [x] Scoped Tools are read-only and tested directly as pure functions
+- [x] A structural test asserts the HR Agent holds no tool returning company financials
+- [x] A structural test asserts no tool instance is shared between the Finance Agent and the HR Agent
+- [x] There is no shared Dataset, no shared data layer, and no tool that reads across the domain boundary
+- [x] The system prompt states the agent's domain and what it cannot see
+- [x] A Question outside the people domain produces a stated refusal
+- [x] The agent runtime from ticket 03 is reused, not duplicated
+- [x] The end-to-end path is tested through the entry point against Fixtures, with no key and no spend
