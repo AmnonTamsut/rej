@@ -1,0 +1,484 @@
+{
+  "company": "Cherry Host",
+  "currency": "USD",
+  "asOf": "2025-09-30",
+  "headcount": {
+    "total": 48,
+    "byTeam": [
+      { "team": "engineering", "headcount": 21, "permanent": 19, "contractors": 2 },
+      { "team": "customer support", "headcount": 8, "permanent": 7, "contractors": 1 },
+      { "team": "sales", "headcount": 7, "permanent": 7, "contractors": 0 },
+      { "team": "marketing", "headcount": 4, "permanent": 3, "contractors": 1 },
+      { "team": "design", "headcount": 3, "permanent": 3, "contractors": 0 },
+      { "team": "operations", "headcount": 3, "permanent": 3, "contractors": 0 },
+      { "team": "leadership", "headcount": 2, "permanent": 2, "contractors": 0 }
+    ]
+  },
+  "vacancies": [
+    {
+      "role": "Senior Backend Engineer",
+      "team": "engineering",
+      "openedOn": "2025-06-02",
+      "daysOpen": 120
+    },
+    {
+      "role": "Platform Engineer",
+      "team": "engineering",
+      "openedOn": "2025-08-25",
+      "daysOpen": 36
+    },
+    {
+      "role": "Account Executive",
+      "team": "sales",
+      "openedOn": "2025-07-14",
+      "daysOpen": 78
+    },
+    {
+      "role": "Support Engineer",
+      "team": "customer support",
+      "openedOn": "2025-08-11",
+      "daysOpen": 50
+    },
+    {
+      "role": "Product Designer",
+      "team": "design",
+      "openedOn": "2025-09-01",
+      "daysOpen": 29
+    }
+  ],
+  "attrition": [
+    {
+      "period": "Q1",
+      "startingHeadcount": 42,
+      "joiners": 3,
+      "leavers": 1,
+      "endingHeadcount": 44,
+      "averageHeadcount": 43,
+      "attritionRatePercent": 2.3,
+      "leaverReasons": [{ "reason": "pay", "count": 1 }]
+    },
+    {
+      "period": "Q2",
+      "startingHeadcount": 44,
+      "joiners": 3,
+      "leavers": 1,
+      "endingHeadcount": 46,
+      "averageHeadcount": 45,
+      "attritionRatePercent": 2.2,
+      "leaverReasons": [{ "reason": "relocation", "count": 1 }]
+    },
+    {
+      "period": "Q3",
+      "startingHeadcount": 46,
+      "joiners": 4,
+      "leavers": 2,
+      "endingHeadcount": 48,
+      "averageHeadcount": 47,
+      "attritionRatePercent": 4.3,
+      "leaverReasons": [
+        { "reason": "pay", "count": 1 },
+        { "reason": "career change", "count": 1 }
+      ]
+    },
+    {
+      "period": "year to date",
+      "startingHeadcount": 42,
+      "joiners": 10,
+      "leavers": 4,
+      "endingHeadcount": 48,
+      "averageHeadcount": 45,
+      "attritionRatePercent": 8.9,
+      "leaverReasons": [
+        { "reason": "pay", "count": 2 },
+        { "reason": "relocation", "count": 1 },
+        { "reason": "career change", "count": 1 }
+      ]
+    }
+  ],
+  "employees": [
+    {
+      "name": "Dana Levi",
+      "role": "Chief Executive",
+      "team": "leadership",
+      "employmentType": "permanent",
+      "salary": 128000,
+      "startedOn": "2019-01-14"
+    },
+    {
+      "name": "Omar Haddad",
+      "role": "Chief Technology Officer",
+      "team": "leadership",
+      "employmentType": "permanent",
+      "salary": 120000,
+      "startedOn": "2019-03-04"
+    },
+    {
+      "name": "Priya Raman",
+      "role": "Head of Engineering",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 114000,
+      "startedOn": "2020-02-17"
+    },
+    {
+      "name": "Tomas Novak",
+      "role": "Staff Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 100000,
+      "startedOn": "2020-06-08"
+    },
+    {
+      "name": "Aisha Bello",
+      "role": "Senior Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 90000,
+      "startedOn": "2021-01-11"
+    },
+    {
+      "name": "Marco Rossi",
+      "role": "Senior Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 88000,
+      "startedOn": "2021-04-05"
+    },
+    {
+      "name": "Lena Fischer",
+      "role": "Senior Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 87000,
+      "startedOn": "2021-09-13"
+    },
+    {
+      "name": "Jonas Berg",
+      "role": "Senior Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 85000,
+      "startedOn": "2022-02-07"
+    },
+    {
+      "name": "Zoe Hart",
+      "role": "Site Reliability Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 84000,
+      "startedOn": "2021-11-01"
+    },
+    {
+      "name": "Ivan Petrov",
+      "role": "Site Reliability Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 82000,
+      "startedOn": "2022-10-10"
+    },
+    {
+      "name": "Hana Sato",
+      "role": "Data Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 80000,
+      "startedOn": "2022-03-14"
+    },
+    {
+      "name": "Diego Alvarez",
+      "role": "Data Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 76000,
+      "startedOn": "2023-09-04"
+    },
+    {
+      "name": "Yuki Tanaka",
+      "role": "Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 72000,
+      "startedOn": "2022-05-16"
+    },
+    {
+      "name": "Elena Marino",
+      "role": "Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 71000,
+      "startedOn": "2022-08-22"
+    },
+    {
+      "name": "Ravi Menon",
+      "role": "Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 70000,
+      "startedOn": "2023-01-09"
+    },
+    {
+      "name": "Chloe Dupont",
+      "role": "Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 69000,
+      "startedOn": "2023-03-20"
+    },
+    {
+      "name": "Adam Kowalski",
+      "role": "Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 68000,
+      "startedOn": "2023-07-03"
+    },
+    {
+      "name": "Nadia Aziz",
+      "role": "Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 67000,
+      "startedOn": "2025-06-02"
+    },
+    {
+      "name": "Sara Nilsson",
+      "role": "QA Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 60000,
+      "startedOn": "2023-05-22"
+    },
+    {
+      "name": "Ben Carter",
+      "role": "Junior Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 50000,
+      "startedOn": "2025-02-03"
+    },
+    {
+      "name": "Mei Lin",
+      "role": "Junior Engineer",
+      "team": "engineering",
+      "employmentType": "permanent",
+      "salary": 48000,
+      "startedOn": "2025-07-07"
+    },
+    {
+      "name": "Lucas Mendes",
+      "role": "Platform Engineer",
+      "team": "engineering",
+      "employmentType": "contractor",
+      "salary": 82000,
+      "startedOn": "2025-09-02"
+    },
+    {
+      "name": "Karim Fahmy",
+      "role": "QA Engineer",
+      "team": "engineering",
+      "employmentType": "contractor",
+      "salary": 58000,
+      "startedOn": "2024-04-08"
+    },
+    {
+      "name": "Ana Ruiz",
+      "role": "Head of Customer Support",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 80000,
+      "startedOn": "2020-07-27"
+    },
+    {
+      "name": "Idris Cole",
+      "role": "Support Engineer",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 56000,
+      "startedOn": "2022-01-24"
+    },
+    {
+      "name": "Mia Larsen",
+      "role": "Support Engineer",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 54000,
+      "startedOn": "2023-02-13"
+    },
+    {
+      "name": "Ahmed Salah",
+      "role": "Support Engineer",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 53000,
+      "startedOn": "2023-10-16"
+    },
+    {
+      "name": "Ruth Mwangi",
+      "role": "Support Engineer",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 51000,
+      "startedOn": "2025-08-18"
+    },
+    {
+      "name": "Jack Turner",
+      "role": "Support Specialist",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 44000,
+      "startedOn": "2024-10-21"
+    },
+    {
+      "name": "Nora Haugen",
+      "role": "Support Specialist",
+      "team": "customer support",
+      "employmentType": "permanent",
+      "salary": 43000,
+      "startedOn": "2025-04-14"
+    },
+    {
+      "name": "Viktor Ilic",
+      "role": "Support Specialist",
+      "team": "customer support",
+      "employmentType": "contractor",
+      "salary": 42000,
+      "startedOn": "2025-08-04"
+    },
+    {
+      "name": "Grace Kim",
+      "role": "Head of Sales",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 100000,
+      "startedOn": "2020-11-02"
+    },
+    {
+      "name": "Anna Kovacs",
+      "role": "Solutions Engineer",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 76000,
+      "startedOn": "2022-04-11"
+    },
+    {
+      "name": "Peter Voss",
+      "role": "Account Executive",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 74000,
+      "startedOn": "2021-06-14"
+    },
+    {
+      "name": "Ines Duarte",
+      "role": "Account Executive",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 72000,
+      "startedOn": "2022-09-05"
+    },
+    {
+      "name": "Tariq Rahman",
+      "role": "Account Executive",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 70000,
+      "startedOn": "2023-11-06"
+    },
+    {
+      "name": "Julia Weber",
+      "role": "Sales Development Representative",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 50000,
+      "startedOn": "2024-06-17"
+    },
+    {
+      "name": "Mateo Silva",
+      "role": "Sales Development Representative",
+      "team": "sales",
+      "employmentType": "permanent",
+      "salary": 48000,
+      "startedOn": "2025-01-20"
+    },
+    {
+      "name": "Leo Marchetti",
+      "role": "Head of Marketing",
+      "team": "marketing",
+      "employmentType": "permanent",
+      "salary": 90000,
+      "startedOn": "2021-02-08"
+    },
+    {
+      "name": "Sinead O'Brien",
+      "role": "Content Lead",
+      "team": "marketing",
+      "employmentType": "permanent",
+      "salary": 64000,
+      "startedOn": "2022-11-14"
+    },
+    {
+      "name": "Bo Chen",
+      "role": "Growth Marketer",
+      "team": "marketing",
+      "employmentType": "contractor",
+      "salary": 62000,
+      "startedOn": "2024-08-05"
+    },
+    {
+      "name": "Fatima Zahra",
+      "role": "Marketing Associate",
+      "team": "marketing",
+      "employmentType": "permanent",
+      "salary": 44000,
+      "startedOn": "2025-03-10"
+    },
+    {
+      "name": "Yara Costa",
+      "role": "Head of Design",
+      "team": "design",
+      "employmentType": "permanent",
+      "salary": 94000,
+      "startedOn": "2020-09-21"
+    },
+    {
+      "name": "Nils Andersen",
+      "role": "Product Designer",
+      "team": "design",
+      "employmentType": "permanent",
+      "salary": 66000,
+      "startedOn": "2022-06-13"
+    },
+    {
+      "name": "Amara Okafor",
+      "role": "Product Designer",
+      "team": "design",
+      "employmentType": "permanent",
+      "salary": 62000,
+      "startedOn": "2025-05-19"
+    },
+    {
+      "name": "Clara Bennett",
+      "role": "Head of Operations",
+      "team": "operations",
+      "employmentType": "permanent",
+      "salary": 86000,
+      "startedOn": "2020-04-06"
+    },
+    {
+      "name": "Samir Patel",
+      "role": "People Operations Lead",
+      "team": "operations",
+      "employmentType": "permanent",
+      "salary": 68000,
+      "startedOn": "2021-08-16"
+    },
+    {
+      "name": "Rosa Jimenez",
+      "role": "Billing Operations Analyst",
+      "team": "operations",
+      "employmentType": "permanent",
+      "salary": 62000,
+      "startedOn": "2023-06-19"
+    }
+  ]
+}

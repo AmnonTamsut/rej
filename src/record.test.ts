@@ -60,9 +60,11 @@ describe("the record command", () => {
   });
 
   it("records nothing for a Question no agent answers and the Local Pass places", async () => {
+    // A `both` Question, until the Agent Meeting that answers one is built:
+    // placed locally, owned by no agent, and so free from end to end.
     const dir = scratchFixturesDir();
 
-    await recordFixtures(["How many people work in the sales team?"], standInClient("hr"), dir);
+    await recordFixtures(["Should we hire more people?"], standInClient("both"), dir);
 
     expect(fixtureCount(dir)).toBe(0);
   });

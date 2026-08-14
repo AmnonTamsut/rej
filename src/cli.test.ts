@@ -72,10 +72,20 @@ describe("the command-line entry point", () => {
     expect(output).toContain("13 months of runway");
   });
 
-  it("reports the Route it assigned a people Question", async () => {
-    const { output } = await ask("How many people work in the sales team?");
+  it("answers a people Question through the same entry point, naming the agent that answered", async () => {
+    // The operator's whole interface to both domains: the same command, the
+    // same output, and no flag selecting an agent. The Route names which
+    // Specialist Agent spoke; nothing asks the operator to know in advance.
+    const question = "How many people work in the sales team?";
+    const { exitCode, output } = await askRecorded(question, [
+      asksFor("hr_headcount", { team: "sales" }),
+      says("Sales is 7 people, all permanent, as of 2025-09-30."),
+    ]);
 
+    expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+hr/);
+    expect(output).toMatch(/Agent:\s+HR Agent/);
+    expect(output).toContain("Sales is 7 people, all permanent, as of 2025-09-30.");
   });
 
   it("reports `both` for a cross-cutting Question", async () => {
@@ -104,17 +114,24 @@ describe("the command-line entry point", () => {
   it("never escalates a Question the Local Pass places: an empty Fixture set is enough", async () => {
     // With no Fixtures on disk, any call through the seam would fail loudly.
     // That this run succeeds is the assertion — the free path stayed free. The
-    // Question is a people one because no agent answers those yet; the same
-    // property for money Questions is asserted on the recorded Fixtures in
-    // `record.test.ts`, where an Escalation would be visible as a recording.
-    const { exitCode, output } = await ask("How many people work in the sales team?");
+    // Question is a cross-cutting one because the Agent Meeting that answers
+    // `both` is a later ticket, so routing it costs nothing at all; the same
+    // property for a Question an agent does answer is asserted on the recorded
+    // Fixtures in `record.test.ts`, where an Escalation would be visible as a
+    // recording of its own.
+    const { exitCode, output } = await ask("Should we hire more people?");
 
     expect(exitCode).toBe(0);
-    expect(output).toMatch(/Route:\s+hr/);
+    expect(output).toMatch(/Route:\s+both/);
   });
 
   it("escalates an Abstention and reports the Route Escalation placed it as", async () => {
-    const { exitCode, output } = await askRecorded(UNPLACEABLE, [says("hr")]);
+    // Two recordings, not one: Escalation's verdict, and then the turn of the
+    // agent that verdict handed the Question to.
+    const { exitCode, output } = await askRecorded(UNPLACEABLE, [
+      says("hr"),
+      says("I answer people Questions, and that is not one."),
+    ]);
 
     expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+hr/);

@@ -1,4 +1,5 @@
 import { financeAgent } from "./agents/finance/agent.js";
+import { hrAgent } from "./agents/hr/agent.js";
 import { askAgent, type AgentAnswer, type SpecialistAgent } from "./agents/specialist-agent.js";
 import type { Route } from "./domain/route.js";
 import type { LLMClient } from "./llm/client.js";
@@ -16,12 +17,19 @@ import { routeQuestion, type RouterVerdict } from "./router/router.js";
  * Which Specialist Agent owns which Route.
  *
  * The growth path is this table: a new Specialist Agent is a Dataset, a tool
- * set, a prompt, an Exemplar Bank, and one line here. Routes with no entry are
- * routed and reported but not answered — `unclear` never reaches an agent by
- * design, and the rest arrive as later tickets fill the table in.
+ * set, a prompt, an Exemplar Bank, and one line here. The HR Agent arrived as
+ * exactly that and no more — the loop above it is the one the Finance Agent
+ * already used. Routes with no entry are routed and reported but not answered:
+ * `unclear` never reaches an agent by design, and `both` opens an Agent
+ * Meeting, which is a later ticket.
+ *
+ * The operator never chooses between these. A Question goes to the entry point
+ * and this table decides, which is the difference between a system and two
+ * agents with a human in the middle.
  */
 const AGENT_FOR: Partial<Record<Route, SpecialistAgent>> = {
   finance: financeAgent,
+  hr: hrAgent,
 };
 
 /**
