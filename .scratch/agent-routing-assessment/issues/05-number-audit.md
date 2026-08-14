@@ -12,13 +12,15 @@ Test this directly rather than waiting for a Fixture that happens to hallucinate
 
 **Blocked by:** 03 — Finance Agent answers money Questions end-to-end.
 
-**Status:** ready-for-agent
+**Status:** done — delivered by e9fdae8, 5e07e76
 
-- [ ] Every numeric figure in an answer is checked against the Scoped Tool results retained from that turn
-- [ ] An answer whose figures all appear in the tool results passes
-- [ ] An answer containing a figure absent from the tool results fails, and the failing figure is named
-- [ ] A failed audit is surfaced on the output of a full run; the answer is never presented as audited
-- [ ] Currency formatting and thousands separators do not cause false failures
-- [ ] The rule for percentages derived from audited figures is chosen deliberately and documented
-- [ ] The audit is a pure function, tested directly rather than only through a recorded run
-- [ ] A full run through the entry point demonstrates a visible audit failure
+- [x] Every numeric figure in an answer is checked against the Scoped Tool results retained from that turn
+- [x] An answer whose figures all appear in the tool results passes
+- [x] An answer containing a figure absent from the tool results fails, and the failing figure is named
+- [x] A failed audit is surfaced on the output of a full run; the answer is never presented as audited
+- [x] Currency formatting and thousands separators do not cause false failures
+- [x] The rule for percentages derived from audited figures is chosen deliberately and documented
+- [x] The audit is a pure function, tested directly rather than only through a recorded run
+- [x] A full run through the entry point demonstrates a visible audit failure
+
+**On the fourth line:** the failing answer is shown, with the failure named above it, rather than suppressed. User story 15 ("told when an answer failed the Number Audit rather than shown the answer anyway") can be read as asking for suppression; this ticket's own wording — never swallowed, never shown as though it passed — is what was built, and ADR 0006 records why. An operator who cannot see what the agent claimed cannot judge how badly it went wrong.
