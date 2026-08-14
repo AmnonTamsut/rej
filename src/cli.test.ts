@@ -13,6 +13,7 @@ import { loadEmbedder } from "./router/embedder.js";
 
 const UNPLACEABLE = "Write me a poem about a cat.";
 const CASH = "What's our cash position right now?";
+const HIRE = "Should we hire more people?";
 
 const CASH_ANSWER =
   "You are holding 1,248,000 USD as of 2025-09-30, burning 96,000 USD a month, " +
@@ -20,6 +21,22 @@ const CASH_ANSWER =
 
 /** A finance turn: the agent reads the cash position, then answers from it. */
 const CASH_TURN = [asksFor("finance_cash_position"), says(CASH_ANSWER)];
+
+const CASH_CONTRIBUTION = "You are holding 1,248,000 USD as of 2025-09-30, burning 96,000 a month.";
+const HEADCOUNT_CONTRIBUTION = "There are 48 people here as of 2025-09-30.";
+
+const RECOMMENDATION =
+  "Hire one engineer. The HR Agent reports 48 people as of 2025-09-30; the Finance Agent " +
+  "reports 1,248,000 USD in the bank against a burn of 96,000 a month.";
+
+/** A whole Agent Meeting: the Finance Agent's turn, the HR Agent's turn, then the synthesis. */
+const meetingTurns = (recommendation: string) => [
+  asksFor("finance_cash_position"),
+  says(CASH_CONTRIBUTION),
+  asksFor("hr_headcount"),
+  says(HEADCOUNT_CONTRIBUTION),
+  says(recommendation),
+];
 
 /**
  * A fixtures directory holding a real recording of this Question's model calls,
@@ -111,10 +128,65 @@ describe("the command-line entry point", () => {
     expect(output).toContain("Sales is 7 people, all permanent, as of 2025-09-30.");
   });
 
-  it("reports `both` for a cross-cutting Question", async () => {
-    const { output } = await ask("Should we hire more people?");
+  it("answers a cross-cutting Question with one joint recommendation, naming who met", async () => {
+    const { exitCode, output } = await askRecorded(HIRE, meetingTurns(RECOMMENDATION));
 
+    expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+both/);
+    expect(output).toMatch(/Meeting:\s+Finance Agent, HR Agent/);
+    expect(output).toContain(RECOMMENDATION);
+  });
+
+  it("prints the recommendation and not the two contributions behind it", async () => {
+    // The operator asked a Question, not for a transcript. Both domains are in
+    // the recommendation — the cash position from one Dataset and the headcount
+    // from the other — and neither contribution is pasted in beside it.
+    const { output } = await askRecorded(HIRE, meetingTurns(RECOMMENDATION));
+
+    expect(output).toContain("1,248,000");
+    expect(output).toContain("48 people");
+    expect(output).not.toContain(CASH_CONTRIBUTION);
+    expect(output).not.toContain(HEADCOUNT_CONTRIBUTION);
+  });
+
+  it("reports a Number Audit that names each contribution and the recommendation", async () => {
+    const { output } = await askRecorded(HIRE, meetingTurns(RECOMMENDATION));
+
+    expect(output).toMatch(/Number Audit: passed/);
+    expect(output).toMatch(/Finance Agent's contribution/);
+    expect(output).toMatch(/HR Agent's contribution/);
+    expect(output).toMatch(/joint recommendation/);
+  });
+
+  it("marks a recommendation unaudited when it states a figure neither agent's tools returned", async () => {
+    // The Agent Meeting's version of the failure the whole check exists for: a
+    // figure that is in neither Dataset, in the one text the operator reads.
+    const invented =
+      "Hire two engineers. The Finance Agent reports 1,248,000 USD in the bank, which covers " +
+      "the 260,000 they would cost.";
+    const { exitCode, output } = await askRecorded(HIRE, meetingTurns(invented));
+
+    expect(exitCode).toBe(0);
+    expect(output).toMatch(/Number Audit: FAILED/);
+    expect(output).toContain("260,000");
+    expect(output).toMatch(/joint recommendation/);
+    expect(output).toMatch(/unaudited/i);
+    expect(output).not.toMatch(/Number Audit: passed/);
+  });
+
+  it("names the attendee whose own contribution failed the audit, even when the recommendation passes", async () => {
+    // A contribution is audited against its own agent's Scoped Tool results and
+    // reported under that agent's name, so an invented figure is attributable to
+    // the domain that invented it rather than lost inside the meeting.
+    const { output } = await askRecorded(HIRE, [
+      asksFor("finance_cash_position"),
+      says("You are holding 2,400,000 USD."),
+      asksFor("hr_headcount"),
+      says(HEADCOUNT_CONTRIBUTION),
+      says(RECOMMENDATION),
+    ]);
+
+    expect(output).toMatch(/Number Audit: FAILED.*2,400,000.*Finance Agent's contribution/);
   });
 
   it("prints the per-bank similarity scores behind every verdict", async () => {
@@ -134,18 +206,17 @@ describe("the command-line entry point", () => {
     expect(output).not.toMatch(/Escalation/);
   });
 
-  it("never escalates a Question the Local Pass places: an empty Fixture set is enough", async () => {
-    // With no Fixtures on disk, any call through the seam would fail loudly.
-    // That this run succeeds is the assertion — the free path stayed free. The
-    // Question is a cross-cutting one because the Agent Meeting that answers
-    // `both` is a later ticket, so routing it costs nothing at all; the same
-    // property for a Question an agent does answer is asserted on the recorded
-    // Fixtures in `record.test.ts`, where an Escalation would be visible as a
-    // recording of its own.
-    const { exitCode, output } = await ask("Should we hire more people?");
+  it("never escalates a Question the Local Pass places: the recorded calls are enough", async () => {
+    // The Fixtures hold exactly the calls the recording run made — an Agent
+    // Meeting's two turns and its synthesis, and no Escalation, because the
+    // Local Pass placed the Question. A run that escalated would be asking for a
+    // Fixture nobody recorded and would fail loudly, so a clean run is the
+    // assertion: the free path stayed free.
+    const { exitCode, output } = await askRecorded(HIRE, meetingTurns(RECOMMENDATION));
 
     expect(exitCode).toBe(0);
     expect(output).toMatch(/Route:\s+both/);
+    expect(output).not.toMatch(/Escalation/);
   });
 
   it("escalates an Abstention and reports the Route Escalation placed it as", async () => {

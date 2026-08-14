@@ -137,3 +137,154 @@ describe("asking the system a Question", () => {
     expect(answer).toBeNull();
   });
 });
+
+const HIRE = "Should we hire more people?";
+
+const CASH_CONTRIBUTION =
+  "You are holding 1,248,000 USD as of 2025-09-30, against a burn of 96,000 USD a month — " +
+  "13 months of runway.";
+
+const HEADCOUNT_CONTRIBUTION =
+  "There are 48 people here as of 2025-09-30, 21 of them in engineering.";
+
+const RECOMMENDATION =
+  "Hire, but for engineering only. The HR Agent reports 48 people as of 2025-09-30, 21 of them " +
+  "in engineering; the Finance Agent reports 1,248,000 USD in the bank against a burn of " +
+  "96,000 USD a month, which is 13 months of runway.";
+
+/**
+ * A whole Agent Meeting: the Finance Agent's turn, the HR Agent's turn, and
+ * then the synthesis — one script, because it is one run of the entry point.
+ */
+const meetingScript = (recommendation: string) => [
+  asksFor("finance_cash_position"),
+  says(CASH_CONTRIBUTION),
+  asksFor("hr_headcount"),
+  says(HEADCOUNT_CONTRIBUTION),
+  says(recommendation),
+];
+
+describe("an Agent Meeting on a cross-cutting Question", () => {
+  beforeAll(async () => {
+    await loadEmbedder();
+  });
+
+  it("opens instead of handing the Question to one Specialist Agent", async () => {
+    const { verdict, answer, meeting } = await askQuestion(
+      HIRE,
+      scriptedClient(meetingScript(RECOMMENDATION)),
+    );
+
+    expect(verdict.route).toBe("both");
+    expect(answer).toBeNull();
+    expect(meeting?.contributions.map((contribution) => contribution.agent)).toEqual([
+      "Finance Agent",
+      "HR Agent",
+    ]);
+  });
+
+  it("ends in one joint recommendation carrying both domains, not two answers side by side", async () => {
+    const { meeting } = await askQuestion(HIRE, scriptedClient(meetingScript(RECOMMENDATION)));
+
+    expect(meeting?.recommendation).toBe(RECOMMENDATION);
+    // The cash position came from one Dataset and the headcount from the other,
+    // and both are in the one text the operator reads.
+    expect(meeting?.recommendation).toMatch(/1,248,000/);
+    expect(meeting?.recommendation).toMatch(/48 people/);
+  });
+
+  it("attributes each fact to the domain that supplied it", async () => {
+    // What this pins is the path, not the model's judgement — in Replay Mode the
+    // recommendation is whatever was recorded. That it names its sources at all
+    // is the synthesis prompt's job.
+    const { meeting } = await askQuestion(HIRE, scriptedClient(meetingScript(RECOMMENDATION)));
+
+    expect(meeting?.recommendation).toMatch(/HR Agent reports 48/);
+    expect(meeting?.recommendation).toMatch(/Finance Agent reports 1,248,000/);
+  });
+
+  it("gives each attendee its own Scoped Tools and no others", async () => {
+    // The Finance Agent reaches across the boundary mid-meeting and is told what
+    // it actually holds. A meeting is two scoped views combined, not a licence
+    // for either agent to read wider than it can outside one.
+    const client = scriptedClient([
+      asksFor("hr_headcount"),
+      says("I cannot see headcount. That is the HR Agent's domain."),
+      asksFor("hr_headcount"),
+      says(HEADCOUNT_CONTRIBUTION),
+      says(RECOMMENDATION),
+    ]);
+
+    const { meeting } = await askQuestion(HIRE, client);
+
+    expect(meeting?.contributions[0]?.toolResults[0]?.result).toEqual({
+      error:
+        "The Finance Agent has no tool named hr_headcount. It holds only: finance_revenue, " +
+        "finance_expenses, finance_cash_position, finance_payroll_cost.",
+    });
+    expect(meeting?.contributions[1]?.toolResults[0]?.result).toMatchObject({ total: 48 });
+  });
+
+  it("never puts both agents' tools in one request, so nothing widens inside a meeting", async () => {
+    // The failure this guards is the tempting one: a meeting that answers a
+    // cross-cutting Question by handing somebody every tool. No request in the
+    // whole run carries tools from more than one domain — the agents' turns
+    // carry their own, and the synthesis carries none.
+    const client = scriptedClient(meetingScript(RECOMMENDATION));
+
+    await askQuestion(HIRE, client);
+
+    for (const request of client.asked) {
+      const named = request.tools.map((tool) => tool.name);
+      const domains = new Set(named.map((name) => name.split("_")[0]));
+
+      expect(domains.size, `one request carried ${named.join(", ")}`).toBeLessThan(2);
+    }
+  });
+
+  it("hands the synthesis no tools, so it can only combine what the agents said", async () => {
+    // The one component in the meeting that sees both domains is the one that
+    // reads no Dataset at all: there is no tool in the request, so there is no
+    // path from here to either agent's data.
+    const client = scriptedClient(meetingScript(RECOMMENDATION));
+
+    await askQuestion(HIRE, client);
+
+    expect(client.asked.at(-1)?.tools).toEqual([]);
+  });
+
+  it("audits each contribution against the Scoped Tool results behind it", async () => {
+    const client = scriptedClient([
+      asksFor("finance_cash_position"),
+      says("You are holding 2,400,000 USD."),
+      asksFor("hr_headcount"),
+      says(HEADCOUNT_CONTRIBUTION),
+      says(RECOMMENDATION),
+    ]);
+
+    const { meeting } = await askQuestion(HIRE, client);
+
+    expect(meeting?.contributions[0]?.audit).toEqual({ passed: false, unaccounted: ["2,400,000"] });
+    expect(meeting?.contributions[1]?.audit.passed).toBe(true);
+  });
+
+  it("audits the joint recommendation against both attendees' tool results", async () => {
+    // Every figure in the recommendation came from a Scoped Tool — the cash from
+    // one agent's, the headcount from the other's — so the synthesis is
+    // accounted for only if the audit reads both agents' evidence.
+    const { meeting } = await askQuestion(HIRE, scriptedClient(meetingScript(RECOMMENDATION)));
+
+    expect(meeting?.audit).toEqual({ passed: true, unaccounted: [] });
+  });
+
+  it("fails the audit on a figure in the recommendation that neither agent's tools returned", async () => {
+    const invented =
+      "Hire two engineers. The Finance Agent reports 1,248,000 USD in the bank, which covers " +
+      "the 260,000 USD a year they would cost.";
+
+    const { meeting } = await askQuestion(HIRE, scriptedClient(meetingScript(invented)));
+
+    expect(meeting?.audit.passed).toBe(false);
+    expect(meeting?.audit.unaccounted).toEqual(["260,000"]);
+  });
+});

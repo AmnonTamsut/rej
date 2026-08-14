@@ -10,11 +10,25 @@ import { routeQuestion } from "./router/router.js";
 
 const PLACED = "How much did we spend on payroll last quarter?";
 const UNPLACEABLE = "Write me a poem about a cat.";
+const HIRE = "Should we hire more people?";
 
 /** A recorded finance turn: the agent reads one Scoped Tool, then answers. */
 const FINANCE_TURN = [
   asksFor("finance_payroll_cost", { period: "Q3" }),
   says("Payroll cost 1,096,000 USD in Q3."),
+];
+
+const RECOMMENDATION =
+  "Hire one engineer. The HR Agent reports 48 people; the Finance Agent reports 1,248,000 USD " +
+  "in the bank.";
+
+/** A recorded Agent Meeting: a turn for each attendee, and then the synthesis. */
+const MEETING_TURNS = [
+  asksFor("finance_cash_position"),
+  says("You are holding 1,248,000 USD."),
+  asksFor("hr_headcount"),
+  says("There are 48 people here."),
+  says(RECOMMENDATION),
 ];
 
 const fixtureCount = (dir: string) => readdirSync(dir).filter((f) => f.endsWith(".json")).length;
@@ -59,14 +73,21 @@ describe("the record command", () => {
     expect(run?.stage).toBe("local-pass");
   });
 
-  it("records nothing for a Question no agent answers and the Local Pass places", async () => {
-    // A `both` Question, until the Agent Meeting that answers one is built:
-    // placed locally, owned by no agent, and so free from end to end.
+  it("records a whole Agent Meeting, so Replay Mode can serve the meeting back", async () => {
+    // A meeting is three recordings in one Question — a turn per attendee and
+    // the synthesis — and a recording that caught only part of it would replay
+    // as a Fixture miss halfway through the meeting.
     const dir = scratchFixturesDir();
 
-    await recordFixtures(["Should we hire more people?"], standInClient("both"), dir);
+    const [run] = await recordFixtures([HIRE], scriptedClient(MEETING_TURNS), dir);
+    const { meeting } = await askQuestion(HIRE, replayClient(dir));
 
-    expect(fixtureCount(dir)).toBe(0);
+    expect(run?.calls).toBe(MEETING_TURNS.length);
+    expect(meeting?.contributions.map((contribution) => contribution.agent)).toEqual([
+      "Finance Agent",
+      "HR Agent",
+    ]);
+    expect(meeting?.recommendation).toBe(RECOMMENDATION);
   });
 
   it("reports what each Question cost, so a recording pass can be counted", async () => {

@@ -69,6 +69,38 @@ describe("running with no key and no network", () => {
     expect(stdout).toContain("1,248,000 USD");
   });
 
+  it("holds a whole Agent Meeting with every outbound connection blocked", async () => {
+    // The most expensive path in the system — two agent turns and a synthesis —
+    // run with no key and nothing to dial. A meeting is where a stray live call
+    // would be easiest to miss, since a Fixture served for the agents' turns
+    // would leave only the synthesis reaching out.
+    const question = "Should we hire more people?";
+    const fixturesDir = scratchFixturesDir();
+    await recordFixtures(
+      [question],
+      scriptedClient([
+        asksFor("finance_cash_position"),
+        says("You are holding 1,248,000 USD."),
+        asksFor("hr_headcount"),
+        says("There are 48 people here."),
+        says(
+          "Hire one engineer. The HR Agent reports 48 people; the Finance Agent reports " +
+            "1,248,000 USD in the bank.",
+        ),
+      ]),
+      fixturesDir,
+    );
+
+    const { stdout } = await run("npx", ["tsx", "src/cli.ts", question], {
+      cwd: repoRoot,
+      env: { ...process.env, ...NO_NETWORK, FIXTURES_DIR: fixturesDir },
+    });
+
+    expect(stdout).toMatch(/Route:\s+both/);
+    expect(stdout).toMatch(/Meeting:\s+Finance Agent, HR Agent/);
+    expect(stdout).toContain("The HR Agent reports 48 people");
+  });
+
   it("serves an Escalation from a Fixture with every outbound connection blocked", async () => {
     const question = "Write me a poem about a cat.";
     const fixturesDir = scratchFixturesDir();
