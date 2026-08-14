@@ -1,0 +1,30 @@
+{
+  "note": "Recorded from a real Claude API call. Fixtures are recorded, never written or edited by hand — see fixtures/README.md. To refresh this one, re-record: npm run record -- --demo",
+  "key": "e3967fef6483a59de41bee5e4e38da15b4cea6d70322b89b9ab7e509d5d065b6",
+  "recordedAt": "2026-08-14T21:09:03.605Z",
+  "request": {
+    "model": "claude-sonnet-5",
+    "system": "You route business Questions to one of two specialist agents: a finance agent\nand an HR agent. You do not answer the Question — you only place it.\n\nReply with exactly one of these four words and nothing else:\n\nfinance — money: revenue, expenses, cash position, total payroll cost\nhr — people: headcount, individual salaries, vacancies, attrition\nboth — needs money and people together, such as whether a hire is affordable\nunclear — neither domain owns it, or the Question is too vague to place",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "When did Ben Carter start?"
+          }
+        ]
+      }
+    ],
+    "tools": []
+  },
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "hr"
+      }
+    ]
+  },
+  "integrity": "4aef067053873c3dbb5a2c6277842d7529e081044f5d1eb02ee19923a10d0728"
+}

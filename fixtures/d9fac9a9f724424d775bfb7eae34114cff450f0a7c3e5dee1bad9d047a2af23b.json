@@ -1,0 +1,176 @@
+{
+  "note": "Recorded from a real Claude API call. Fixtures are recorded, never written or edited by hand — see fixtures/README.md. To refresh this one, re-record: npm run record -- --demo",
+  "key": "d9fac9a9f724424d775bfb7eae34114cff450f0a7c3e5dee1bad9d047a2af23b",
+  "recordedAt": "2026-08-14T21:08:49.691Z",
+  "request": {
+    "model": "claude-sonnet-5",
+    "system": "You are the HR Agent for Cherry Host — the department the platform calls Eva.\nYou answer people Questions: headcount and how it is split across teams, the roles currently\nopen, attrition and why people leave, and what individuals are paid.\n\nYou read data only through the tools you have been given. They cover this company's own\npeople records and nothing else. You cannot see:\n\n- the company's finances: revenue, expenses, the cash position, runway, or what payroll costs\n  the company in total. That is the Finance Agent's domain and its data is not yours to read.\n- what the company spends, even on people. You can see what an individual is paid; you cannot\n  turn that into a company figure. Do not add salaries together, do not annualise or scale\n  them, and do not present any total you assembled yourself as what the company spends.\n- anything outside this company's people records.\n\nIf a Question needs data you have no tool for, say so plainly and stop. Do not estimate, do\nnot extrapolate from what you can see, and do not answer from general knowledge. A stated\nrefusal is the right answer to a Question outside your domain — a plausible guess is not.\n\nWhen you do answer: call the tools you need first, then answer in a few sentences. Say what\ndate or period the figures are for, and name the currency on any pay figure. Every figure in\nyour answer must come from a tool result in this conversation — never round, rescale, or\ninfer a number that a tool did not return.",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "An operator has asked Cherry Host: \"Should we hire more people?\"\n\nNo single domain answers it, so each specialist agent is examining it through its own\ntools and the contributions will be combined into one joint recommendation. This is\nyour contribution.\n\nRead the tools that bear on the Question now, and set out what your own data says about\nit: the figures themselves, not an offer to fetch them and not a list of what you could\nlook up. Leave the other domain to the agent that holds it, and say plainly what your\nown data cannot settle."
+          }
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_01XStsroiiRhJQeNuWT5pAxo",
+            "name": "hr_headcount",
+            "input": {}
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_012FUZqZ42S4eYv75yRXgpZc",
+            "name": "hr_vacancies",
+            "input": {}
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_01CwqZVcAwx3w31GFemFg9ny",
+            "name": "hr_attrition",
+            "input": {
+              "period": "year to date"
+            }
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "tool_result",
+            "toolUseId": "toolu_01XStsroiiRhJQeNuWT5pAxo",
+            "content": "{\"asOf\":\"2025-09-30\",\"total\":48,\"byTeam\":[{\"team\":\"engineering\",\"headcount\":21,\"permanent\":19,\"contractors\":2},{\"team\":\"customer support\",\"headcount\":8,\"permanent\":7,\"contractors\":1},{\"team\":\"sales\",\"headcount\":7,\"permanent\":7,\"contractors\":0},{\"team\":\"marketing\",\"headcount\":4,\"permanent\":3,\"contractors\":1},{\"team\":\"design\",\"headcount\":3,\"permanent\":3,\"contractors\":0},{\"team\":\"operations\",\"headcount\":3,\"permanent\":3,\"contractors\":0},{\"team\":\"leadership\",\"headcount\":2,\"permanent\":2,\"contractors\":0}]}"
+          },
+          {
+            "type": "tool_result",
+            "toolUseId": "toolu_012FUZqZ42S4eYv75yRXgpZc",
+            "content": "{\"asOf\":\"2025-09-30\",\"openRoles\":5,\"vacancies\":[{\"role\":\"Senior Backend Engineer\",\"team\":\"engineering\",\"openedOn\":\"2025-06-02\",\"daysOpen\":120},{\"role\":\"Platform Engineer\",\"team\":\"engineering\",\"openedOn\":\"2025-08-25\",\"daysOpen\":36},{\"role\":\"Account Executive\",\"team\":\"sales\",\"openedOn\":\"2025-07-14\",\"daysOpen\":78},{\"role\":\"Support Engineer\",\"team\":\"customer support\",\"openedOn\":\"2025-08-11\",\"daysOpen\":50},{\"role\":\"Product Designer\",\"team\":\"design\",\"openedOn\":\"2025-09-01\",\"daysOpen\":29}]}"
+          },
+          {
+            "type": "tool_result",
+            "toolUseId": "toolu_01CwqZVcAwx3w31GFemFg9ny",
+            "content": "{\"asOf\":\"2025-09-30\",\"period\":\"year to date\",\"startingHeadcount\":42,\"joiners\":10,\"leavers\":4,\"endingHeadcount\":48,\"averageHeadcount\":45,\"attritionRatePercent\":8.9,\"leaverReasons\":[{\"reason\":\"pay\",\"count\":2},{\"reason\":\"relocation\",\"count\":1},{\"reason\":\"career change\",\"count\":1}]}"
+          }
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "name": "hr_headcount",
+        "description": "How many people work here: the company total broken down by team, or one team's headcount, each split into permanent staff and contractors.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team": {
+              "type": "string",
+              "enum": [
+                "engineering",
+                "customer support",
+                "sales",
+                "marketing",
+                "design",
+                "operations",
+                "leadership"
+              ],
+              "description": "Which team to report headcount for. Omit for the whole company."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "hr_vacancies",
+        "description": "The roles currently open, for the whole company or for one team: the role, the team hiring, when it opened, and how many days it has been open.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team": {
+              "type": "string",
+              "enum": [
+                "engineering",
+                "customer support",
+                "sales",
+                "marketing",
+                "design",
+                "operations",
+                "leadership"
+              ],
+              "description": "Which team to report vacancies for. Omit for the whole company."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "hr_attrition",
+        "description": "Attrition for a quarter or the year to date: how many people joined and left, the headcount either side of that, the attrition rate as a percentage, and the reasons leavers gave.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "enum": [
+                "Q1",
+                "Q2",
+                "Q3",
+                "year to date"
+              ],
+              "description": "Which period to report attrition for."
+            }
+          },
+          "required": [
+            "period"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "hr_salary",
+        "description": "What individuals are paid: annual base salary, with their role, team, and start date. Ask by name for one person, or by role or team to compare pay across a group. At least one of name, role, or team is required — this tool answers about the people you name, not the roster in bulk.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "All or part of a person's name."
+            },
+            "role": {
+              "type": "string",
+              "description": "All or part of a role title, for example 'Senior Engineer'."
+            },
+            "team": {
+              "type": "string",
+              "enum": [
+                "engineering",
+                "customer support",
+                "sales",
+                "marketing",
+                "design",
+                "operations",
+                "leadership"
+              ],
+              "description": "Which team to report pay for. Omit for the whole company."
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    ]
+  },
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "## HR Contribution — as of 2025-09-30\n\n**Headcount:** 48 people total, spread across engineering (21), customer support (8), sales (7), marketing (4), design (3), operations (3), and leadership (2).\n\n**Open roles:** 5 vacancies currently open across the company:\n- Senior Backend Engineer (engineering) — open 120 days\n- Account Executive (sales) — open 78 days\n- Support Engineer (customer support) — open 50 days\n- Platform Engineer (engineering) — open 36 days\n- Product Designer (design) — open 29 days\n\nTwo of these — the Senior Backend Engineer and Account Executive roles — have been open for well over two months, which suggests real difficulty filling them rather than a fresh posting.\n\n**Attrition (year to date):** Headcount grew from 42 to 48 (10 joiners, 4 leavers), an attrition rate of 8.9%. Of the 4 leavers, 2 cited pay, 1 relocation, 1 career change.\n\n**What this tells us:** Headcount is growing, not shrinking, and attrition is modest — the leaving reasons don't point to a systemic staffing crisis, though pay came up twice out of four exits. There are five genuine open vacancies, two of which have sat unfilled for a long time, indicating existing hiring plans that aren't yet closed. This data shows demand for roles already budgeted and in progress; it does not tell us whether the company should add headcount **beyond** these open roles.\n\n**What my data cannot settle:** Whether the company can afford to hire — for open roles or new ones — is a question of budget, revenue, and cash runway, which is outside what I can see. I can tell you the people-side facts (headcount, vacancies open, attrition) but not whether hiring is financially sound right now. That call rests with the Finance Agent's contribution."
+      }
+    ]
+  },
+  "integrity": "3cdeb13481010e8c48961417f2b2146309112cbd9fac878e7bd0d550912fc3e6"
+}

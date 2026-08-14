@@ -1,7 +1,7 @@
 import type { AgentMeeting } from "./agents/meeting.js";
 import { askQuestion } from "./ask.js";
 import type { NumberAudit } from "./audit/number-audit.js";
-import { type CliResult, runAsCommand } from "./command.js";
+import { type CliResult, runAsCommand, unknownFlagResult, unknownFlags } from "./command.js";
 import { API_KEY_VARIABLE, chooseMode, clientFor, environmentFrom, LIVE_FLAG } from "./llm/mode.js";
 import { rankBanks, type BankScores } from "./router/local-pass.js";
 import type { RoutingStage } from "./router/router.js";
@@ -20,7 +20,7 @@ const USAGE = [
 ].join("\n");
 
 /** The stage names an operator reads, from `CONTEXT.md`. */
-const STAGE_LABEL: Record<RoutingStage, string> = {
+export const STAGE_LABEL: Record<RoutingStage, string> = {
   "local-pass": "Local Pass",
   escalation: "Escalation",
 };
@@ -150,14 +150,12 @@ export const runCli = async (
   env: Record<string, string | undefined>,
 ): Promise<CliResult> => {
   const flags = argv.filter((arg) => arg.startsWith("--"));
-  const unknown = flags.filter((flag) => flag !== LIVE_FLAG);
-  if (unknown.length > 0) {
-    // Deliberately fatal rather than folded into the Question: the flags people
-    // reach for here are the ones that would turn Escalation off, and there is
-    // no such flag (ADR 0005). Failing says so; silently routing "--local" as
-    // part of the Question would not.
-    return { exitCode: 1, output: `Unknown option ${unknown.join(", ")}\n\n${USAGE}`, notice: null };
-  }
+  // Deliberately fatal rather than folded into the Question: the flags people
+  // reach for here are the ones that would turn Escalation off, and there is no
+  // such flag (ADR 0005). Failing says so; silently routing "--local" as part of
+  // the Question would not.
+  const unknown = unknownFlags(argv, [LIVE_FLAG]);
+  if (unknown.length > 0) return unknownFlagResult(unknown, USAGE);
 
   const question = argv
     .filter((arg) => !arg.startsWith("--"))

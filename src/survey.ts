@@ -11,13 +11,15 @@ import { localPass, rankBanks } from "./router/local-pass.js";
  * is meant to lower it — this command is how that is shown rather than assumed.
  * Run it before and after a Bank edit and compare.
  *
- * The Questions below are the ones the demo Question set will be drawn from
- * (ticket 07 makes that choice), written as an operator would type them. None is
- * copied verbatim from an Exemplar Bank, and a test holds them to that: a
- * Question lifted from a Bank scores about 1.0 against itself and would flatter
- * the rate into meaning nothing. That is also why this set is not the demo set —
- * the demo says "Should we hire more people?" in the assessment's own words,
- * which is an exemplar, so the survey asks it the way an operator would instead.
+ * The Questions below are a realistic day's traffic, written as an operator
+ * would type them, and they include the demo Question set — a test in
+ * `demo.test.ts` holds the two in step, so the rate is always measured over what
+ * the demo actually asks. None is copied verbatim from an Exemplar Bank, and a
+ * test holds them to that: a Question lifted from a Bank scores about 1.0
+ * against itself and would flatter the rate into meaning nothing. That is the
+ * one place the two sets part company — the demo says "Should we hire more
+ * people?" in the assessment's own words, which is an exemplar, so the survey
+ * asks it the way an operator would instead.
  *
  * Some of these are meant to abstain — see `docs/exemplar-bank-coverage.md` for
  * which and why. The rate is not expected to reach zero.
@@ -34,6 +36,7 @@ export const SURVEY_QUESTIONS: readonly string[] = [
   "How much cash is left in the bank?",
   "What's our burn rate?",
   "How much did we spend on marketing last month?",
+  "How much did we spend on payroll in Q3?",
   // people, by role or in aggregate
   "How many of us are there now?",
   "How many roles are we trying to fill?",
@@ -45,6 +48,7 @@ export const SURVEY_QUESTIONS: readonly string[] = [
   "How long has Zoe Hart worked here?",
   "Which team is Clara Bennett on?",
   "Is Mei Lin a contractor?",
+  "When did Ben Carter start?",
   // people, by superlative
   "Who is our highest paid employee?",
   "Who is our most expensive person?",
@@ -54,6 +58,7 @@ export const SURVEY_QUESTIONS: readonly string[] = [
   "Would raising everyone's salary hurt our runway?",
   "Is losing people costing us money?",
   // nothing here answers these
+  "Who won the customer of the year award?",
   "What time does the office open?",
   "What is our holiday policy?",
   "How do I fix the printer?",

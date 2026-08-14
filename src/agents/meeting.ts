@@ -55,6 +55,38 @@ export const SYNTHESIS_PROMPT = [
   "contributions do not settle the Question between them, say what is missing and stop.",
 ].join("\n");
 
+/**
+ * What an attendee is actually asked.
+ *
+ * Not the bare Question, and the reason is worth stating because handing the
+ * Question straight through is the obvious implementation: an agent asked
+ * "should we hire more people?" on its own answers it the way it should answer
+ * an operator who asked it directly — by naming the figures it could pull and
+ * offering to pull them. That is a fair reply to a person and a useless
+ * contribution to a meeting, because the synthesis is then combining two offers
+ * and can only report that nothing was settled.
+ *
+ * So the attendee is told where its answer is going. Nothing here widens what it
+ * can see: it is still `askAgent` with the agent's own tools, and the brief
+ * points at the other domain only to say that it belongs to someone else.
+ *
+ * This text is part of the Fixture key, so editing a word here moves the key and
+ * the recordings made against the old wording stop being served. Re-record.
+ */
+export const contributionBrief = (question: string): string =>
+  [
+    `An operator has asked Cherry Host: "${question}"`,
+    "",
+    "No single domain answers it, so each specialist agent is examining it through its own",
+    "tools and the contributions will be combined into one joint recommendation. This is",
+    "your contribution.",
+    "",
+    "Read the tools that bear on the Question now, and set out what your own data says about",
+    "it: the figures themselves, not an offer to fetch them and not a list of what you could",
+    "look up. Leave the other domain to the agent that holds it, and say plainly what your",
+    "own data cannot settle.",
+  ].join("\n");
+
 export type AgentMeeting = {
   /**
    * What each attendee contributed, in the order they were asked.
@@ -106,7 +138,7 @@ export const holdAgentMeeting = async (
 ): Promise<AgentMeeting> => {
   const contributions: AgentAnswer[] = [];
   for (const attendee of attendees) {
-    contributions.push(await askAgent(attendee, question, client));
+    contributions.push(await askAgent(attendee, contributionBrief(question), client));
   }
 
   // No tools, and no history but the brief: `oneShot` is the same shape of

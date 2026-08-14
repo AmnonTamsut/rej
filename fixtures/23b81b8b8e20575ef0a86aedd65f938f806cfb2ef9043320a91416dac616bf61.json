@@ -1,0 +1,135 @@
+{
+  "note": "Recorded from a real Claude API call. Fixtures are recorded, never written or edited by hand — see fixtures/README.md. To refresh this one, re-record: npm run record -- --demo",
+  "key": "23b81b8b8e20575ef0a86aedd65f938f806cfb2ef9043320a91416dac616bf61",
+  "recordedAt": "2026-08-14T21:09:05.738Z",
+  "request": {
+    "model": "claude-sonnet-5",
+    "system": "You are the HR Agent for Cherry Host — the department the platform calls Eva.\nYou answer people Questions: headcount and how it is split across teams, the roles currently\nopen, attrition and why people leave, and what individuals are paid.\n\nYou read data only through the tools you have been given. They cover this company's own\npeople records and nothing else. You cannot see:\n\n- the company's finances: revenue, expenses, the cash position, runway, or what payroll costs\n  the company in total. That is the Finance Agent's domain and its data is not yours to read.\n- what the company spends, even on people. You can see what an individual is paid; you cannot\n  turn that into a company figure. Do not add salaries together, do not annualise or scale\n  them, and do not present any total you assembled yourself as what the company spends.\n- anything outside this company's people records.\n\nIf a Question needs data you have no tool for, say so plainly and stop. Do not estimate, do\nnot extrapolate from what you can see, and do not answer from general knowledge. A stated\nrefusal is the right answer to a Question outside your domain — a plausible guess is not.\n\nWhen you do answer: call the tools you need first, then answer in a few sentences. Say what\ndate or period the figures are for, and name the currency on any pay figure. Every figure in\nyour answer must come from a tool result in this conversation — never round, rescale, or\ninfer a number that a tool did not return.",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "When did Ben Carter start?"
+          }
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "name": "hr_headcount",
+        "description": "How many people work here: the company total broken down by team, or one team's headcount, each split into permanent staff and contractors.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team": {
+              "type": "string",
+              "enum": [
+                "engineering",
+                "customer support",
+                "sales",
+                "marketing",
+                "design",
+                "operations",
+                "leadership"
+              ],
+              "description": "Which team to report headcount for. Omit for the whole company."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "hr_vacancies",
+        "description": "The roles currently open, for the whole company or for one team: the role, the team hiring, when it opened, and how many days it has been open.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "team": {
+              "type": "string",
+              "enum": [
+                "engineering",
+                "customer support",
+                "sales",
+                "marketing",
+                "design",
+                "operations",
+                "leadership"
+              ],
+              "description": "Which team to report vacancies for. Omit for the whole company."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "hr_attrition",
+        "description": "Attrition for a quarter or the year to date: how many people joined and left, the headcount either side of that, the attrition rate as a percentage, and the reasons leavers gave.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "enum": [
+                "Q1",
+                "Q2",
+                "Q3",
+                "year to date"
+              ],
+              "description": "Which period to report attrition for."
+            }
+          },
+          "required": [
+            "period"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "hr_salary",
+        "description": "What individuals are paid: annual base salary, with their role, team, and start date. Ask by name for one person, or by role or team to compare pay across a group. At least one of name, role, or team is required — this tool answers about the people you name, not the roster in bulk.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "All or part of a person's name."
+            },
+            "role": {
+              "type": "string",
+              "description": "All or part of a role title, for example 'Senior Engineer'."
+            },
+            "team": {
+              "type": "string",
+              "enum": [
+                "engineering",
+                "customer support",
+                "sales",
+                "marketing",
+                "design",
+                "operations",
+                "leadership"
+              ],
+              "description": "Which team to report pay for. Omit for the whole company."
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    ]
+  },
+  "response": {
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_017FpNvokoQAxXJbtcfapQoB",
+        "name": "hr_salary",
+        "input": {
+          "name": "Ben Carter"
+        }
+      }
+    ]
+  },
+  "integrity": "f545049cd02d1b7cd4661d0612d810bd8e0eb2570fccafd4cd2a682f9bf81ca3"
+}

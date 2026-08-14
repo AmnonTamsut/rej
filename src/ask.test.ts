@@ -272,6 +272,28 @@ describe("an Agent Meeting on a cross-cutting Question", () => {
     expect(brief).toContain(HIRE);
   });
 
+  it("tells each attendee its answer is a contribution, so it fetches figures instead of offering to", async () => {
+    // An agent handed the bare Question answers it the way it should answer an
+    // operator who asked it directly: by saying which figures it could pull and
+    // offering to pull them. That is a fair reply and a useless contribution —
+    // the synthesis is then combining two offers and can only report that
+    // nothing was settled. Each attendee is told where its answer is going.
+    const client = scriptedClient(meetingScript(RECOMMENDATION));
+
+    await askQuestion(HIRE, client);
+
+    const openings = client.asked
+      .filter((request) => request.tools.length > 0)
+      .map((request) => textOf({ content: request.messages[0]?.content ?? [] }));
+
+    expect(openings).toHaveLength(4); // two turns each, both opening on the brief
+    for (const opening of openings) {
+      expect(opening).toContain(HIRE);
+      expect(opening).toMatch(/combined into one joint recommendation/i);
+      expect(opening).toMatch(/not an offer to fetch them/i);
+    }
+  });
+
   it("audits each contribution against the Scoped Tool results behind it", async () => {
     const client = scriptedClient([
       asksFor("finance_cash_position"),

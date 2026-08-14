@@ -11,6 +11,25 @@ export type CliResult = {
 };
 
 /**
+ * The flags a command was given that it does not know, if any.
+ *
+ * Both commands treat an unknown flag as fatal rather than folding it into the
+ * text, and for the same reason: the argument that looks like a flag and is not
+ * one is never meant as words. `npm run ask --local` would otherwise route
+ * "--local" as part of the Question, and `npm run record --dmeo` would record a
+ * misspelling as a Question and pay for it.
+ */
+export const unknownFlags = (argv: readonly string[], known: readonly string[]): string[] =>
+  argv.filter((arg) => arg.startsWith("--") && !known.includes(arg));
+
+/** What a command says when it was given a flag it does not know. */
+export const unknownFlagResult = (unknown: readonly string[], usage: string): CliResult => ({
+  exitCode: 1,
+  output: `Unknown option ${unknown.join(", ")}\n\n${usage}`,
+  notice: null,
+});
+
+/**
  * Run a command when its file was invoked directly, and not when it was
  * imported.
  *

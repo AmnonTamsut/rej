@@ -1,10 +1,12 @@
 import { readdirSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { askQuestion } from "./ask.js";
+import { DEMO_QUESTIONS } from "./demo.js";
 import { replayClient } from "./llm/fixtures.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
+import { BUDGET_CAP_USD, formatSpend } from "./llm/pricing.js";
 import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
-import { recordFixtures, runRecord } from "./record.js";
+import { DEMO_FLAG, recordFixtures, runRecord } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
 import { routeQuestion } from "./router/router.js";
 
@@ -122,5 +124,60 @@ describe("running the record command", () => {
 
     expect(exitCode).toBe(1);
     expect(output).toMatch(/usage/i);
+  });
+
+  it("refuses a flag it does not know rather than recording it as a Question", async () => {
+    // Spending money to file a Fixture for "--dmeo" is the failure here.
+    const dir = scratchFixturesDir();
+
+    const { exitCode, output } = await runRecord(["--dmeo"], {
+      [API_KEY_VARIABLE]: "sk-ant-not-a-real-key",
+      FIXTURES_DIR: dir,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output).toContain("Unknown option --dmeo");
+    expect(fixtureCount(dir)).toBe(0);
+  });
+
+  it(`refuses ${DEMO_FLAG} beside a Question rather than recording the set and dropping it`, async () => {
+    // The same fault as the unknown flag above, one step over: the operator
+    // asked for two things and would have paid for one, with nothing said about
+    // the other. Which of the two they meant is theirs to say, not ours to pick.
+    const dir = scratchFixturesDir();
+
+    const { exitCode, output } = await runRecord([DEMO_FLAG, PLACED], {
+      [API_KEY_VARIABLE]: "sk-ant-not-a-real-key",
+      FIXTURES_DIR: dir,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output).toContain(PLACED);
+    expect(fixtureCount(dir)).toBe(0);
+  });
+
+  it(`offers ${DEMO_FLAG} as the one deliberate pass, and says what it records`, () => {
+    // The set is named by the flag rather than typed out by whoever records, so
+    // the shipped Fixtures and the demo cannot drift apart by a copy-paste.
+    expect(DEMO_FLAG).toBe("--demo");
+    expect(DEMO_QUESTIONS.length).toBeGreaterThan(0);
+  });
+});
+
+describe("what a recording pass reports about its spend", () => {
+  it("prices the pass against the project's cap", () => {
+    // 10,000 input at $3/M and 2,000 output at $15/M is $0.06.
+    const line = formatSpend({ inputTokens: 10_000, outputTokens: 2_000 });
+
+    expect(line).toContain("10,000 input");
+    expect(line).toContain("2,000 output");
+    expect(line).toContain("$0.0600");
+    expect(line).toContain(`$${BUDGET_CAP_USD} project cap`);
+  });
+
+  it("shows a fraction of a cent as a fraction of a cent, rather than as free", () => {
+    // A pass that rounds to "$0.00" reads as costing nothing, which is the one
+    // thing a spend report must never say about spend.
+    expect(formatSpend({ inputTokens: 100, outputTokens: 20 })).toContain("$0.0006");
   });
 });

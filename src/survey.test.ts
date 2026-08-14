@@ -13,6 +13,12 @@ import { abstentionsIn, formatSurvey, runSurvey, survey, SURVEY_QUESTIONS } from
  * confidently on an agent that cannot serve them. `docs/exemplar-bank-coverage.md`
  * says so at more length.
  *
+ * One of them is a demo Question — "When did Ben Carter start?" is in the demo
+ * set precisely because it abstains, which is how Escalation gets to be visible
+ * in front of a reviewer. It costs one small call per run and returns the right
+ * Route; `docs/exemplar-bank-coverage.md` records what closing that gap was
+ * measured to cost and why it was not paid.
+ *
  * A Question arriving in this list is a Bank that got thinner or a threshold
  * that moved, and it costs a model call on every run from then on. That is the
  * failure ADR 0005 warns is quiet — it shows up as spend, not as a misroute —
@@ -21,6 +27,7 @@ import { abstentionsIn, formatSurvey, runSurvey, survey, SURVEY_QUESTIONS } from
  * of these is pinned in both places.
  */
 const EXPECTED_ABSTENTIONS: readonly string[] = [
+  "When did Ben Carter start?",
   "What time does the office open?",
   "What is our holiday policy?",
   "How do I fix the printer?",
@@ -50,7 +57,7 @@ describe("the Abstention survey", () => {
     expect(output).toContain(
       `${EXPECTED_ABSTENTIONS.length} of ${SURVEY_QUESTIONS.length} Questions abstained`,
     );
-    expect(output).toContain("Abstention rate of 20%");
+    expect(output).toContain("Abstention rate of 21%");
   });
 
   it("asks the Questions in an operator's words rather than the Banks' own", () => {

@@ -115,6 +115,24 @@ describe("running with no key and no network", () => {
     expect(stdout).toMatch(/Escalation/);
   });
 
+  it("runs the whole demo from the shipped Fixtures with no key and every connection blocked", async () => {
+    // What a reviewer does on a clean clone, done here with the key stripped
+    // from the environment and nothing to dial: `npm run demo` is the claim the
+    // repo makes on its front page, so it is checked as a process rather than
+    // as a function call. The Fixtures are the shipped ones — this is the test
+    // that says the recording pass covered the whole set.
+    const { ANTHROPIC_API_KEY: _removed, ...noKey } = process.env;
+
+    const { stdout } = await run("npx", ["tsx", "src/demo.ts"], {
+      cwd: repoRoot,
+      env: { ...noKey, ...NO_NETWORK },
+      maxBuffer: 10 * 1024 * 1024,
+    });
+
+    expect(stdout).not.toContain("No Fixture for key");
+    expect(stdout).toContain("All 7 demo Questions ran from recorded Fixtures — no key, no spend.");
+  });
+
   it("reads the API key in exactly one place, so what can spend is one file's worth of reading", () => {
     expect(filesContaining(API_KEY_VARIABLE)).toEqual(["src/llm/mode.ts"]);
   });

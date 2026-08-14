@@ -90,19 +90,28 @@ are on this list because they are known, not because they are broken.
 
 ## What the widening cost and bought
 
-Measured with `npm run survey` over the 25 Questions the demo set will be drawn
-from, before and after the Bank edit:
+Measured with `npm run survey` before and after the Bank edit, over the
+25-Question set as it stood at the time:
 
 | | Abstentions | Abstention rate |
 | --- | --- | --- |
 | Before | 9 of 25 | 36% |
 | After | 5 of 25 | 20% |
 
-The five that remain are the ones this note says should remain: office hours, the
-holiday policy, the printer, the French Question, and the poem. The rate is not
-meant to reach zero — a Question no Dataset answers is supposed to reach
+The five that remained are the ones this note says should remain: office hours,
+the holiday policy, the printer, the French Question, and the poem. The rate is
+not meant to reach zero — a Question no Dataset answers is supposed to reach
 Escalation, and paying one small call to say `unclear` is the price of not
 guessing.
+
+The survey has since grown to 28 Questions, because ticket 07 settled the demo
+set and the two were brought into step: every demo Question that is not itself an
+exemplar is now priced here, so the rate is measured over what the demo actually
+asks. The Bank edit is unchanged; the denominator is not. Six of 28 now abstain —
+21% — and the sixth is `When did Ben Carter start?`, which is in the demo set
+precisely because it abstains. It is the terse-name case below, and the demo uses
+it to show Escalation rescuing a phrasing the Banks do not cover. Re-run
+`npm run survey` rather than trusting these figures after a Bank edit.
 
 ## The two thresholds
 
