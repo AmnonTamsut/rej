@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { deepFreeze } from "../deep-freeze.js";
 
 /**
  * The Finance Agent's Dataset: the company's own books, and nothing else.
@@ -72,20 +73,6 @@ export type FinanceDataset = {
   readonly expenses: readonly ExpenseRow[];
   readonly cash: CashPosition;
   readonly payroll: readonly PayrollRow[];
-};
-
-/**
- * Freeze the Dataset through and through.
- *
- * `readonly` is a compile-time promise and disappears at runtime; freezing is
- * the runtime half. Scoped Tools are read-only functions (ADR 0004) and this is
- * what makes "no Question can mutate the Dataset" true of the running program
- * rather than only of the types.
- */
-const deepFreeze = <T>(value: T): T => {
-  if (value === null || typeof value !== "object") return value;
-  Object.values(value).forEach(deepFreeze);
-  return Object.freeze(value);
 };
 
 const datasetFile = fileURLToPath(new URL("./dataset.json", import.meta.url));

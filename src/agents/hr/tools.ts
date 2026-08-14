@@ -33,11 +33,18 @@ import {
 /** The date the whole Dataset is as of, carried on each result so a figure is never bare. */
 const { asOf, currency } = HR_DATASET;
 
-/** A tool result: Dataset rows, stamped with the date they are as of, and frozen.
+/**
+ * A tool result: Dataset rows, stamped with the date they are as of, and frozen.
  *
  * Frozen for the same reason the Dataset is. A tool result is evidence the
  * Number Audit will check an answer against, and evidence that could be edited
  * on the way to the audit is not evidence.
+ *
+ * The date is stamped on every result because every figure here is as of a
+ * date; the currency is not, because only one of these results has money in it.
+ * The Finance Dataset stamps currency on everything for the same reason in
+ * reverse — there, every figure is money. A currency on a headcount would say
+ * this agent deals in company money, and it does not.
  */
 const result = <T extends object>(fields: T): JsonValue =>
   Object.freeze({ asOf, ...fields }) as JsonValue;
@@ -165,16 +172,30 @@ export const attritionTool: ScopedTool = {
   },
 };
 
+/**
+ * Who a salary Question is about: any of a name, a role, and a team, and at
+ * least one of them.
+ *
+ * The three travel together everywhere, so they are one thing rather than three
+ * parameters. An empty one is the Question "everyone", which this tool does not
+ * answer — see `ASK_FOR_SOMEONE`.
+ */
+type Roster = {
+  readonly name?: string;
+  readonly role?: string;
+  readonly team?: Team;
+};
+
 /** A text filter, matched case-insensitively on part of the value. `undefined` when not asked for. */
 const textIn = (input: JsonObject, key: string): string | undefined => {
   const value = input[key];
   return typeof value === "string" && value.trim() !== "" ? value.trim().toLowerCase() : undefined;
 };
 
-const matches = (employee: Employee, name?: string, role?: string, team?: Team): boolean =>
-  (name === undefined || employee.name.toLowerCase().includes(name)) &&
-  (role === undefined || employee.role.toLowerCase().includes(role)) &&
-  (team === undefined || employee.team === team);
+const matches = (employee: Employee, asked: Roster): boolean =>
+  (asked.name === undefined || employee.name.toLowerCase().includes(asked.name)) &&
+  (asked.role === undefined || employee.role.toLowerCase().includes(asked.role)) &&
+  (asked.team === undefined || employee.team === asked.team);
 
 export const salaryTool: ScopedTool = {
   schema: {
@@ -201,19 +222,22 @@ export const salaryTool: ScopedTool = {
     },
   },
   read: (input): JsonValue => {
-    const name = textIn(input, "name");
-    const role = textIn(input, "role");
-    const askedTeam = input["team"];
-    const team = teamIn(input);
+    const asked: Roster = {
+      name: textIn(input, "name"),
+      role: textIn(input, "role"),
+      team: teamIn(input),
+    };
 
-    if (askedTeam !== undefined && team === undefined) return NO_SUCH_TEAM;
-    if (name === undefined && role === undefined && team === undefined) return ASK_FOR_SOMEONE;
+    if (input["team"] !== undefined && asked.team === undefined) return NO_SUCH_TEAM;
+    if (Object.values(asked).every((filter) => filter === undefined)) return ASK_FOR_SOMEONE;
 
     const found = Object.freeze(
-      HR_DATASET.employees.filter((employee) => matches(employee, name, role, team)),
+      HR_DATASET.employees.filter((employee) => matches(employee, asked)),
     );
 
-    return found.length === 0 ? NO_ONE_NAMED : result({ currency, count: found.length, matches: found });
+    return found.length === 0
+      ? NO_ONE_NAMED
+      : result({ currency, count: found.length, matches: found });
   },
 };
 

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { deepFreeze } from "../deep-freeze.js";
 
 /**
  * The HR Agent's Dataset: the company's people records, and nothing else.
@@ -14,6 +15,15 @@ import { fileURLToPath } from "node:url";
  * The mirror image of the Finance Dataset, and deliberately so. That one holds
  * company-wide money and no person; this one holds people and their individual
  * pay, and no company money. Each agent's blind spot is the other's subject.
+ *
+ * The two describe one company, so the invented figures were made to agree: the
+ * 48 people on this roster are the 48 the books carry as payroll's
+ * `headcountCovered`, and the roster's annual pay, grossed up by the employer
+ * contribution rate in the books, lands just above what the books say payroll
+ * costs — just above, because four of those people joined partway through the
+ * quarter the books are reporting. Nothing links them at runtime. They agree
+ * because they were written to, which is the only way two Datasets with no
+ * shared layer between them can agree.
  */
 
 /** The teams the company is organised into. Every employee belongs to exactly one. */
@@ -115,20 +125,6 @@ export type HrDataset = {
   readonly vacancies: readonly Vacancy[];
   readonly attrition: readonly AttritionRow[];
   readonly employees: readonly Employee[];
-};
-
-/**
- * Freeze the Dataset through and through.
- *
- * `readonly` is a compile-time promise and disappears at runtime; freezing is
- * the runtime half. Scoped Tools are read-only functions (ADR 0004) and this is
- * what makes "no Question can mutate the Dataset" true of the running program
- * rather than only of the types.
- */
-const deepFreeze = <T>(value: T): T => {
-  if (value === null || typeof value !== "object") return value;
-  Object.values(value).forEach(deepFreeze);
-  return Object.freeze(value);
 };
 
 const datasetFile = fileURLToPath(new URL("./dataset.json", import.meta.url));

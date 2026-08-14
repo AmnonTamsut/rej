@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JsonObject, JsonValue } from "../../llm/client.js";
+import { countsIn, keysOf, leavesOf } from "../testing.js";
 import { hrAgent, HR_SYSTEM_PROMPT } from "./agent.js";
 import { HR_DATASET, PERIODS, TEAMS } from "./dataset.js";
 
@@ -19,29 +20,6 @@ import { HR_DATASET, PERIODS, TEAMS } from "./dataset.js";
  * The Finance Agent's half of the same argument is in `finance/isolation.test.ts`,
  * and the assertion that needs both agents at once is in `../isolation.test.ts`.
  */
-
-/** Every scalar reachable inside a value, ignoring the keys around them. */
-const leavesOf = (value: JsonValue): (string | number | boolean | null)[] => {
-  if (Array.isArray(value)) return value.flatMap(leavesOf);
-  if (value !== null && typeof value === "object") return Object.values(value).flatMap(leavesOf);
-  return [value];
-};
-
-/** The length of every list reachable inside a value — the only figures a tool computes. */
-const countsIn = (value: JsonValue): number[] => {
-  if (Array.isArray(value)) return [value.length, ...value.flatMap(countsIn)];
-  if (value !== null && typeof value === "object") return Object.values(value).flatMap(countsIn);
-  return [];
-};
-
-/** Every field name reachable inside a value, at any depth. */
-const keysOf = (value: JsonValue): string[] => {
-  if (Array.isArray(value)) return value.flatMap(keysOf);
-  if (value !== null && typeof value === "object") {
-    return Object.entries(value).flatMap(([key, nested]) => [key, ...keysOf(nested)]);
-  }
-  return [];
-};
 
 /**
  * Every field the HR Dataset is allowed to contain.

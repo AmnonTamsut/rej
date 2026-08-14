@@ -151,7 +151,7 @@ describe("the HR Agent's Scoped Tools", () => {
   });
 
   it("says it found nobody rather than offering someone else", () => {
-    const result = salaryTool.read({ name: "Noah" }) as { error?: string; count?: number };
+    const result = salaryTool.read({ name: "Quentin Marsh" }) as { error?: string; count?: number };
 
     expect(result.error).toMatch(/nobody|no one/i);
     expect(result.count).toBeUndefined();

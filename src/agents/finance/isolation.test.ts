@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JsonObject, JsonValue } from "../../llm/client.js";
+import { leavesOf } from "../testing.js";
 import { financeAgent, FINANCE_SYSTEM_PROMPT } from "./agent.js";
 import { FINANCE_DATASET, PERIODS } from "./dataset.js";
 
@@ -15,13 +16,6 @@ import { FINANCE_DATASET, PERIODS } from "./dataset.js";
  * not because a check rejects it, but because no such figure exists on this
  * side of the boundary.
  */
-
-/** Every scalar reachable inside a value, ignoring the keys around them. */
-const leavesOf = (value: JsonValue): (string | number | boolean | null)[] => {
-  if (Array.isArray(value)) return value.flatMap(leavesOf);
-  if (value !== null && typeof value === "object") return Object.values(value).flatMap(leavesOf);
-  return [value];
-};
 
 /** Every label the Finance Dataset is allowed to contain. A person's name is not one. */
 const DATASET_LABELS = [

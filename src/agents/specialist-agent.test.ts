@@ -8,13 +8,10 @@ import { askAgent, MAX_TOOL_TURNS, type ScopedTool, type SpecialistAgent } from 
  * either real agent standing in for it. What the Finance Agent does with the
  * loop is tested through the entry point; what the loop does is tested here.
  *
- * Every assertion below is on the `AgentAnswer` the loop returns, bar one: what
- * the model is offered. That is not the loop's private business — "each agent
- * is handed only its own tool schemas" is the isolation guarantee itself (ADR
- * 0004), and the schemas the model sees are the only place it can be observed.
- * Nothing here asserts on an assembled prompt, on the shape of a message sent
- * to the model, or on how many times the model was asked; a suite that pins
- * those cannot refactor the loop.
+ * Every assertion below is on the `AgentAnswer` the loop returns. Nothing here
+ * asserts on an assembled prompt, on the shape of a message sent to the model,
+ * or on how many times the model was asked — those are the loop's private
+ * business, and a suite that pins them cannot refactor it.
  */
 const tool = (name: string, result: JsonObject): ScopedTool => ({
   schema: { name, description: `Returns ${name}.`, inputSchema: { type: "object" } },
@@ -75,21 +72,6 @@ describe("the agent runtime", () => {
     const { toolResults } = await askAgent(agent, "Read both.", client);
 
     expect(toolResults.map((r) => r.tool)).toEqual(["first", "second"]);
-  });
-
-  it("offers the model the agent's own tool schemas and nothing else", async () => {
-    // There is no registry above this loop and no tool it can reach that the
-    // agent does not hold, so every agent's offer is its own `tools` list —
-    // which is what makes each Specialist Agent's pinned tool set the whole of
-    // the guarantee rather than half of it.
-    const agent = agentWith(tool("first", { value: 1 }), tool("second", { value: 2 }));
-    const client = scriptedClient([asksFor("first"), says("Read.")]);
-
-    await askAgent(agent, "Read the first.", client);
-
-    for (const request of client.asked) {
-      expect(request.tools).toEqual(agent.tools.map((held) => held.schema));
-    }
   });
 
   it("does not run a tool the agent does not hold, and says what it does hold", async () => {

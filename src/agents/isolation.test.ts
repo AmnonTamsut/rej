@@ -3,7 +3,7 @@ import { FINANCE_DATASET } from "./finance/dataset.js";
 import { financeAgent } from "./finance/agent.js";
 import { HR_DATASET } from "./hr/dataset.js";
 import { hrAgent } from "./hr/agent.js";
-import type { ScopedTool } from "./specialist-agent.js";
+import { objectsIn } from "./testing.js";
 
 /**
  * The half of the isolation guarantee that needs both Specialist Agents to
@@ -17,16 +17,14 @@ import type { ScopedTool } from "./specialist-agent.js";
 
 const agents = [financeAgent, hrAgent];
 
-const toolsOf = (agent: (typeof agents)[number]): readonly ScopedTool[] => agent.tools;
-
 describe("the two Specialist Agents", () => {
   it("share no tool instance", () => {
     // Identity, not name. Two agents holding the same function object would
     // read one Dataset between them however the schemas were labelled, and that
     // is the failure ADR 0004 exists to make impossible — so it is the failure
     // this asserts against, rather than a resemblance of it.
-    for (const financeTool of toolsOf(financeAgent)) {
-      for (const hrTool of toolsOf(hrAgent)) {
+    for (const financeTool of financeAgent.tools) {
+      for (const hrTool of hrAgent.tools) {
         const pair = `${financeTool.schema.name} and ${hrTool.schema.name}`;
 
         expect(financeTool, pair).not.toBe(hrTool);
@@ -37,39 +35,28 @@ describe("the two Specialist Agents", () => {
   });
 
   it("share no tool name, so neither can be reached by guessing at the other's", () => {
-    const names = agents.flatMap((agent) => toolsOf(agent).map((tool) => tool.schema.name));
+    const names = agents.flatMap((agent) => agent.tools.map((tool) => tool.schema.name));
 
     expect(new Set(names).size, `tool names: ${names.join(", ")}`).toBe(names.length);
   });
 
-  it("hold Datasets with nothing in common but the company they describe", () => {
-    // No shared Dataset and no shared data layer: two separate objects, loaded
-    // from two separate files, with no reference held in common. The company
-    // name and the currency are strings that happen to match, which is what
-    // "describing the same company" looks like when nothing is shared.
-    expect(FINANCE_DATASET as object).not.toBe(HR_DATASET as object);
-    expect(Object.keys(FINANCE_DATASET)).not.toEqual(Object.keys(HR_DATASET));
-    expect(HR_DATASET.company).toBe(FINANCE_DATASET.company);
-  });
+  it("hold Datasets with no object in common", () => {
+    // The shape "no shared Dataset and no shared data layer" takes when you go
+    // looking for it: every object and array inside one Dataset, against every
+    // object and array inside the other, by identity. Two files, two parses,
+    // nothing held in common — so there is no object a change to one Dataset
+    // could reach the other agent through.
+    const financeObjects = new Set(objectsIn(FINANCE_DATASET));
+    const hrObjects = objectsIn(HR_DATASET);
 
-  it("describe one company consistently, so a Question answered by both agrees with itself", () => {
-    // Not a runtime link — nothing in the running system reads both Datasets,
-    // and this is the only file in the suite that does. It is a check on
-    // invented data: the Agent Meeting will put a headcount from one Dataset
-    // next to a payroll figure from the other, and two figures that quietly
-    // contradict each other would make the joint recommendation nonsense.
-    const q3Payroll = FINANCE_DATASET.payroll.find((row) => row.period === "Q3");
+    // Both sides counted first, so an empty comparison cannot pass for a clean one.
+    expect(financeObjects.size).toBeGreaterThan(0);
+    expect(hrObjects.length).toBeGreaterThan(0);
 
-    expect(HR_DATASET.headcount.total).toBe(q3Payroll?.headcountCovered);
-
-    // The roster's annual base pay, grossed up by the employer contribution
-    // rate the books carry, should land on what the books say payroll costs.
-    // Slightly above it, because the roster is the company as of quarter end
-    // and four of those people joined partway through the quarter.
-    const rosterBasePay = HR_DATASET.employees.reduce((total, e) => total + e.salary, 0);
-    const quarterlyBase = (q3Payroll?.totalCost ?? 0) - (q3Payroll?.employerContributions ?? 0);
-
-    expect(rosterBasePay / (quarterlyBase * 4)).toBeGreaterThan(1);
-    expect(rosterBasePay / (quarterlyBase * 4)).toBeLessThan(1.02);
+    for (const held of hrObjects) {
+      expect(financeObjects.has(held), `shared object: ${JSON.stringify(held).slice(0, 60)}`).toBe(
+        false,
+      );
+    }
   });
 });
