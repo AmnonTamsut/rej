@@ -15,16 +15,20 @@ Themed names for the departments belong here and in prompts. They must not appea
 
 **Blocked by:** 07 — Demo Question set and the full Fixture set.
 
-**Status:** ready-for-agent
+**Status:** done — delivered by 975aa89
 
-- [ ] States what the system does and shows a real Question and its output
-- [ ] Replay Mode run instructions work from a clean clone with no key
-- [ ] Live Mode run instructions state what it costs and that it needs a flag and a key
-- [ ] Explains the architecture and the reasoning: the two-stage Router, the isolation-by-Scoped-Tools guarantee, the `LLMClient` seam, the Number Audit, and the Agent Meeting
-- [ ] Explains why isolation is structural rather than a filter, and how a reader verifies it from the wiring
-- [ ] Names the Router's vocabulary limit as a limitation
-- [ ] Names that ambiguous Questions now cost an Escalation call, and which stage is deterministic
-- [ ] Explains the first-run model download and its approximate size before the reader hits it
-- [ ] Describes the growth path for adding a third Specialist Agent
-- [ ] Lists the remaining next steps that were deliberately not built
-- [ ] Uses the vocabulary from `CONTEXT.md`; themed department names appear only in prose and prompts, never as code identifiers
+- [x] States what the system does and shows a real Question and its output
+- [x] Replay Mode run instructions work from a clean clone with no key
+- [x] Live Mode run instructions state what it costs and that it needs a flag and a key
+- [x] Explains the architecture and the reasoning: the two-stage Router, the isolation-by-Scoped-Tools guarantee, the `LLMClient` seam, the Number Audit, and the Agent Meeting
+- [x] Explains why isolation is structural rather than a filter, and how a reader verifies it from the wiring
+- [x] Names the Router's vocabulary limit as a limitation
+- [x] Names that ambiguous Questions now cost an Escalation call, and which stage is deterministic
+- [x] Explains the first-run model download and its approximate size before the reader hits it
+- [x] Describes the growth path for adding a third Specialist Agent
+- [x] Lists the remaining next steps that were deliberately not built
+- [x] Uses the vocabulary from `CONTEXT.md`; themed department names appear only in prose and prompts, never as code identifiers
+
+**On the first and second lines:** a README's prose can go stale silently, so the claims that can are pinned in `src/readme.test.ts` rather than left for a reviewer to find as lies. Both transcripts are run through the real entry point in Replay Mode and compared character-for-character; every `npm` command is checked against `package.json`, every path against the tree, and the download size and budget cap against the constants that define them. The Abstention rate and the French Question's score are asserted against the survey that produces them, because widening an Exemplar Bank is *meant* to move those — a README quoting the old ones would go quietly wrong at exactly the moment someone improved the Router.
+
+**On the last line:** the half of that rule that binds the source tree — the themed names never being code identifiers — is asserted over all of `src` in `src/vocabulary.test.ts`, by shape rather than against a list of files. A test that had to be edited to add a third Specialist Agent would be a fifth thing this ticket's growth path doesn't mention.
