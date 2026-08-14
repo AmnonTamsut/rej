@@ -4,7 +4,6 @@ import {
   FINANCE_DATASET,
   PERIODS,
   rowFor,
-  type CashPosition,
   type ExpenseRow,
   type PayrollRow,
   type Period,
@@ -96,7 +95,7 @@ export const cashPositionTool: ScopedTool = {
       "that follows from them, as of the date on the result.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
-  read: (): JsonValue => ({ ...(FINANCE_DATASET.cash satisfies CashPosition), currency }),
+  read: (): JsonValue => ({ ...FINANCE_DATASET.cash, currency }),
 };
 
 export const payrollCostTool: ScopedTool = {
