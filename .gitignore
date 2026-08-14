@@ -2,3 +2,10 @@ node_modules/
 .model-cache/
 .DS_Store
 *.log
+
+# Employer-supplied brief — not my work, kept locally only
+AI-Engineer-Technical-Assessment*.pdf
+
+# Secrets (Live Mode key, ticket 02)
+.env
+.env.*
