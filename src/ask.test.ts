@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { askQuestion } from "./ask.js";
+import { textOf } from "./llm/client.js";
 import { asksFor, says, scriptedClient } from "./llm/testing.js";
 import { loadEmbedder } from "./router/embedder.js";
 
@@ -251,6 +252,24 @@ describe("an Agent Meeting on a cross-cutting Question", () => {
     await askQuestion(HIRE, client);
 
     expect(client.asked.at(-1)?.tools).toEqual([]);
+  });
+
+  it("hands the synthesis every contribution, so neither domain can be dropped on the way", async () => {
+    // The one thing a recorded recommendation cannot show. In Replay Mode the
+    // recommendation is whatever was recorded, so a meeting that quietly asked
+    // for a synthesis of one contribution would still produce a text mentioning
+    // both — and would keep producing it for a Question whose answer had come to
+    // depend on the contribution that was dropped. What both domains reaching
+    // the synthesis looks like from outside is this: both are in what it was
+    // asked.
+    const client = scriptedClient(meetingScript(RECOMMENDATION));
+
+    await askQuestion(HIRE, client);
+
+    const brief = textOf({ content: client.asked.at(-1)?.messages[0]?.content ?? [] });
+    expect(brief).toContain(CASH_CONTRIBUTION);
+    expect(brief).toContain(HEADCOUNT_CONTRIBUTION);
+    expect(brief).toContain(HIRE);
   });
 
   it("audits each contribution against the Scoped Tool results behind it", async () => {

@@ -187,6 +187,11 @@ describe("the command-line entry point", () => {
     ]);
 
     expect(output).toMatch(/Number Audit: FAILED.*2,400,000.*Finance Agent's contribution/);
+    // And does not tell the operator the recommendation they are reading is
+    // unaudited, because it is not: the figure the Finance Agent invented is in
+    // no Scoped Tool result, so a recommendation that passed cannot contain it.
+    expect(output).toMatch(/passed its own audit/);
+    expect(output).not.toMatch(/What you are reading is unaudited/);
   });
 
   it("prints the per-bank similarity scores behind every verdict", async () => {

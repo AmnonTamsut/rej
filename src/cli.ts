@@ -36,12 +36,13 @@ const formatScores = (scores: BankScores): string =>
  *
  * A single agent's answer is one of these; an Agent Meeting is three — a
  * contribution from each attendee and the joint recommendation. Naming the
- * piece is what makes the meeting's audit worth reading: "no Scoped Tool result
- * accounts for 2,400,000" is a different problem depending on whether the
- * figure was the Finance Agent's or the meeting's own.
+ * subject is what makes the meeting's audit worth reading: "no Scoped Tool
+ * result accounts for 2,400,000" is a different problem depending on whether
+ * the figure was the Finance Agent's or the meeting's own.
  */
 type Audited = {
-  readonly of: string;
+  /** What was audited, as the operator is told it: "the joint recommendation". */
+  readonly subject: string;
   readonly audit: NumberAudit;
 };
 
@@ -65,24 +66,41 @@ const listing = (items: readonly string[]): string =>
  * the answer is worth reading; what it is not is worth acting on the numbers
  * of, and that is what the words say. Hiding the answer would leave an operator
  * unable to see what the agent claimed and where it went wrong.
+ *
+ * `read` is the text on the screen — the answer, or an Agent Meeting's joint
+ * recommendation — and `behind` is whatever produced it and was audited too. The
+ * two are distinguished because they mean different things when they fail: a
+ * failure in what the operator is reading makes those numbers unusable, while a
+ * failure in a contribution the recommendation passed its own audit is a fault
+ * that provably did not reach the page, and telling an operator otherwise would
+ * spend the audit's credibility on a warning that is not true.
  */
-const auditReport = (audited: readonly Audited[]): string => {
+const auditReport = (read: Audited, behind: readonly Audited[] = []): string => {
+  const audited = [...behind, read];
   const failed = audited.filter(({ audit }) => !audit.passed);
   if (failed.length === 0) {
     return (
-      `Number Audit: passed — every figure in ${listing(audited.map(({ of }) => of))} ` +
+      `Number Audit: passed — every figure in ${listing(audited.map((one) => one.subject))} ` +
       "appears in a Scoped Tool result."
     );
   }
 
   return [
     ...failed.map(
-      ({ of, audit }) =>
+      ({ subject, audit }) =>
         `Number Audit: FAILED — no Scoped Tool result accounts for ` +
-        `${audit.unaccounted.join(", ")} in ${of}.`,
+        `${audit.unaccounted.join(", ")} in ${subject}.`,
     ),
-    "What you are reading is unaudited: it rests on a figure this run cannot point at a source",
-    "for, so do not act on its numbers.",
+    ...(read.audit.passed
+      ? [
+          `Nothing unaccounted reached ${read.subject}, which passed its own audit — but a`,
+          "contribution behind it states a figure with no source, so this is not a meeting to act",
+          "on the numbers of.",
+        ]
+      : [
+          "What you are reading is unaudited: it rests on a figure this run cannot point at a",
+          "source for, so do not act on its numbers.",
+        ]),
   ].join("\n");
 };
 
@@ -102,13 +120,13 @@ const meetingReport = (meeting: AgentMeeting): string[] => [
   "",
   meeting.recommendation,
   "",
-  auditReport([
-    ...meeting.contributions.map((contribution) => ({
-      of: `the ${contribution.agent}'s contribution`,
+  auditReport(
+    { subject: "the joint recommendation above", audit: meeting.audit },
+    meeting.contributions.map((contribution) => ({
+      subject: `the ${contribution.agent}'s contribution`,
       audit: contribution.audit,
     })),
-    { of: "the joint recommendation", audit: meeting.audit },
-  ]),
+  ),
 ];
 
 const CLARIFICATION = [
@@ -159,17 +177,17 @@ export const runCli = async (
       "",
       `Route:    ${verdict.route.padEnd(8)}  (${STAGE_LABEL[verdict.stage]})`,
     ];
-    // The three things a Route can produce, and all it can produce: one agent's
-    // answer, an Agent Meeting's recommendation, or — for `unclear` — the
-    // request for clarification below. No Route reaches the operator with a
-    // silence where its answer should be.
+    // The two ways a Question is answered. The Route that is neither — `unclear`,
+    // the only one no Specialist Agent and no Agent Meeting owns — is met by the
+    // clarification request further down, so no Route reaches the operator with
+    // a silence where its answer should be.
     if (answer !== null) {
       lines.push(
         `Agent:    ${answer.agent}`,
         "",
         answer.answer,
         "",
-        auditReport([{ of: "the answer above", audit: answer.audit }]),
+        auditReport({ subject: "the answer above", audit: answer.audit }),
       );
     } else if (meeting !== null) {
       lines.push(...meetingReport(meeting));
