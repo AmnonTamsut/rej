@@ -12,7 +12,7 @@ Reuse the agent runtime from ticket 03. If it does not fit the HR Agent cleanly,
 
 **Blocked by:** 03 — Finance Agent answers money Questions end-to-end.
 
-**Status:** done — delivered by fde3f22
+**Status:** done — delivered by fde3f22, d7fdaf8
 
 - [x] A people Question asked at the entry point routes `hr` and returns an answer grounded in HR Scoped Tool results
 - [x] Money and people Questions are asked through the same entry point with no agent selection by the operator
