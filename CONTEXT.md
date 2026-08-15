@@ -26,6 +26,10 @@ _Avoid_: database, DB
 A read-only function exposed to exactly one Specialist Agent over that agent's Dataset — the only path by which any agent reads data.
 _Avoid_: helper, endpoint
 
+**Structural Isolation**:
+Isolation that holds because a Specialist Agent was never given the tool, rather than because a check refused the request. It is a property of the wiring, so it is asserted by reading what an agent holds.
+_Avoid_: sandboxing, access control, permissions
+
 ### Routing
 
 **Question**:

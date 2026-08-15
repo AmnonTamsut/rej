@@ -11,31 +11,42 @@ below names something that exists in the code, it is cited.
 A system prompt is not a security boundary. "You are Noah, you only see finance
 tables" is a request to a model, and a request is the wrong mechanism for a
 guarantee that has to hold on the run where the model is confused, jailbroken, or
-simply wrong. So I would enforce isolation in three layers and treat only the
-bottom one as load-bearing. The prompt shapes behaviour: it names the agent's
-domain, names what it cannot see, and tells it to decline rather than speculate —
-that last clause is what turns a misroute into a visible refusal instead of an
-invented answer. The tool layer bounds capability: each agent is constructed with
-its own array of Scoped Tools and there is no registry to look another agent's
-tool up in, so an agent cannot request data it holds no tool for — in this repo
-that is `src/agents/finance/tools.ts` and `src/agents/hr/tools.ts`, and
-`src/agents/isolation.test.ts` asserts the two arrays share no tool instance and
-no tool name. The database layer bounds authority: each agent's tools execute
-under their own Postgres role with row-level security, so Noah's connection
-cannot read HR tables even if the tool wiring is one day got wrong. That third
-layer is the one I would not ship without, because the first two are code I wrote
-and the whole point is to survive my own mistakes.
+simply wrong. So I would enforce isolation in three layers, and treat only the
+last as load-bearing.
 
-The alternative I rejected is one shared data layer with a caller identity and
-per-request filtering. It is less code and it centralises the rules, but it makes
-isolation a runtime property that depends on filter logic being correct on every
-path — a class of bug that is invisible until it leaks. Structural isolation
-costs duplication across eight agents and gives up cross-department joins by
-design, which is the right trade here: cross-domain work goes through the Agent
-Meeting (question 2) rather than through a wider query. Where a figure genuinely
-must cross, the tool returns an aggregate shape and only that shape — the finance
-payroll tool returns a company total and a headcount, never a row per person, so
-there is no filtered version of it to get wrong.
+1. **The prompt shapes behaviour.** It names the agent's domain, names what it
+   cannot see, and tells it to decline rather than speculate — that last clause
+   turns a misroute into a visible refusal instead of an invented answer.
+2. **The tool layer bounds capability.** Each agent is constructed with its own
+   array of Scoped Tools, and there is no registry to look another agent's tool
+   up in, so an agent cannot request data it holds no tool for. Where a figure
+   genuinely must cross, the tool returns an aggregate shape and only that shape,
+   so there is no filtered version of it to get wrong.
+   In this repo: `src/agents/finance/tools.ts`, `src/agents/hr/tools.ts`, and
+   `src/agents/isolation.test.ts`, which asserts the two arrays share no tool
+   instance and no tool name.
+3. **The database layer bounds authority.** Each agent's tools execute under
+   their own Postgres role with row-level security, so Noah's connection cannot
+   read HR tables even if the tool wiring is one day got wrong. This is not the
+   filtered shared access rejected below; the difference is who enforces it.
+   Filter logic I wrote fails open and silently, a role the database refuses
+   fails closed and loudly. That is why this is the layer I would not ship
+   without — the two above it are code I wrote, and the point is to survive my
+   own mistakes.
+
+The alternative is one shared data layer with a caller identity and per-request
+filtering in application code. It is less code and it centralises the rules, but
+it makes isolation depend on that filter being correct on every path — a class of
+bug that is invisible until it leaks. Structural isolation instead costs
+duplication across eight agents and gives up cross-department joins by design,
+which is the right trade here: cross-domain work goes through the Agent Meeting
+(question 2) rather than through a wider query.
+
+All three layers bound what an agent can read. The same boundary reappears in
+other media — conversation history, logs and traces, and whatever one agent
+publishes to another. The last of those is what question 2's two-phase design is
+for; the first two I would hold to the same per-agent rule rather than leave to
+be noticed later.
 
 ## 2 — The AI Agent Meeting
 
