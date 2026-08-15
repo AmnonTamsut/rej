@@ -38,64 +38,63 @@ publishes to another are the same boundary in another medium.
 
 ## 2 — The AI Agent Meeting
 
-Eight agents in an open conversation is the version that does not work: cost is
-unbounded, ordering is non-deterministic, and each agent has to be shown the
-others' output, which quietly undoes the isolation from question 1. I would run
-it as two phases instead. In the gather phase every attendee answers the same
-question independently through its own Scoped Tools and returns a contribution
-with the tool results that produced it attached — these run in parallel, no agent
-sees another's data, and the cost is exactly one turn per attendee. In the
-synthesis phase a single call holding **no tools of its own** receives the
-contributions and combines them into one recommendation that attributes each fact
-to the agent that supplied it. That bounds a meeting at N+1 calls, keeps it
-reproducible, and means the only thing crossing a department boundary is a
-sentence an agent chose to publish. `src/agents/meeting.ts` is this, for two
-attendees.
+Eight agents in an open conversation fails three ways: cost is unbounded,
+ordering is non-deterministic, and each agent must be shown the others' output,
+which undoes question 1. Two phases instead.
 
-Hallucinated numbers get a mechanical check rather than a better prompt, because
-a prompt saying "only use figures from your tools" is again a request. Every
-figure appearing in a contribution must also appear in that agent's own tool
-results; every figure in the joint recommendation must appear in the attendees'
-pooled results. A figure that does not is named and the text is marked unaudited
-— shown, not suppressed, because hiding an agent's bad output teaches the
-operator nothing. The rule checks provenance rather than arithmetic, which means
-a derived figure fails on purpose: "revenue is up 12%" computed from two grounded
-numbers is rejected, because with a dozen figures in evidence there are hundreds
-of available ratios, and accepting derived percentages would make them the one
-place an invented number passed unchallenged. That costs some correct answers,
-which I would rather pay than run a check with a known hole in it.
-`src/audit/number-audit.ts` and ADR 0006 have the full rule; the shipped demo
-includes a meeting where this check fails, kept rather than re-recorded.
+1. **Gather — each attendee answers alone.** Every attendee answers the same
+   Question through its own Scoped Tools and returns a contribution with the tool
+   results that produced it attached. These run in parallel; no agent sees
+   another's data.
+2. **Synthesis — one call, holding no tools.** It receives the contributions and
+   combines them into one recommendation, attributing each fact to the agent that
+   supplied it.
+
+That bounds a meeting at N+1 calls, keeps it reproducible, and means the only
+thing crossing a department boundary is a sentence an agent chose to publish.
+(`src/agents/meeting.ts`, for two attendees.)
+
+Hallucinated numbers get the Number Audit rather than a better prompt, since
+"only use figures from your tools" is again a request. Every figure in a
+contribution must appear in that agent's tool results, and every figure in the
+joint recommendation in the attendees' pooled results. A figure that does not is
+named and the text marked unaudited — shown, not suppressed, because hiding an
+agent's bad output teaches the operator nothing. The rule checks provenance, not
+arithmetic, so a derived figure fails on purpose: with a dozen figures in
+evidence there are hundreds of available ratios, and accepting derived
+percentages would make them the one place an invented number passed. That costs
+some correct answers, which I would rather pay than run a check with a known
+hole. (`src/audit/number-audit.ts`, ADR 0006; the shipped demo includes a meeting
+where this check fails, kept rather than re-recorded.)
 
 ## 3 — Scale, rate limits, and cost
 
-Fifteen employees at two to three requests a minute is thirty to forty-five
-requests a minute — small in absolute terms, but bursty, and the limits that bite
-are per-key and cover tokens as well as requests. The first move is that every
-call in the system already goes through one seam (`src/llm/client.ts`), so
-queueing, retries and limiting are one implementation behind one interface rather
-than fifteen call sites to remember. Behind it I would put a single shared queue
-with a token-bucket limiter configured from the account's actual requests- and
-tokens-per-minute, admission by priority so an employee waiting on a chat reply
-goes ahead of an overnight report, and backoff on 429 that honours `retry-after`
-rather than guessing. Work that cannot be served in time fails visibly to the
-person waiting, with its place in the queue, instead of being dropped or retried
-forever — a queue whose failures are silent is how a rate limit turns into a
-support ticket about "the AI being slow".
+Fifteen employees at two to three requests a minute is thirty to forty-five a
+minute — small, but bursty, and the limits that bite are per-key and cover tokens
+as well as requests. Every call already goes through one seam
+(`src/llm/client.ts`), so all of the below is one implementation behind one
+interface rather than fifteen call sites to remember.
 
-The largest saving is not calling the model at all, which is why the Local Pass
-scores a Question against Exemplar Banks locally rather than asking a model: it
-removes one model call from every single request and costs nothing per call after
-a one-time model download. On top of that, three caches. Prompt caching on the long stable prefix — system prompt
-plus tool schemas is most of the tokens on a short question, and it barely
-changes between calls. A response cache for repeated questions, keyed on the
-question plus a version stamp of the underlying data, so an answer expires when
-the tables move rather than on a timer someone has to guess. And caching routing
-verdicts, which this repo deliberately does not do yet — the same unplaceable
-question escalates every time, and it is listed as a next step rather than
-pretended away. Finally, model choice per step: placing a Question and combining
-contributions do not need the largest model, and picking per step against an eval
-is a bigger lever than tuning prompts by hand. All of it under a hard
-per-user and per-day spend cap with metering, because an agent platform without a
-ceiling is one runaway loop away from a memorable invoice — this project ran under
-a $5 cap and `docs/recording-pass.md` accounts for every cent of it.
+1. **Queue and limit.** One shared queue with a token-bucket limiter configured
+   from the account's real requests- and tokens-per-minute; admission by priority,
+   so someone waiting on a chat reply goes ahead of an overnight report; backoff
+   on 429 honouring `retry-after` rather than guessing. Work that cannot be served
+   in time fails visibly, with its place in the queue — a queue whose failures are
+   silent is how a rate limit becomes a support ticket about "the AI being slow".
+2. **Don't call the model.** The largest saving. The Local Pass places a Question
+   against the Exemplar Banks locally, removing one model call from every request
+   and costing nothing per call after a one-time model download.
+3. **Cache what is left.** Prompt caching on the stable prefix, since system
+   prompt plus tool schemas is most of the tokens on a short question. A response
+   cache keyed on the Question plus a version stamp of the underlying data, so an
+   answer expires when the tables move rather than on a guessed timer. And routing
+   verdicts, which this repo deliberately does not cache yet — the same
+   unplaceable Question escalates every time, listed as a next step rather than
+   pretended away.
+4. **Right-size per step.** Placing a Question and combining contributions do not
+   need the largest model, and picking per step against an eval is a bigger lever
+   than tuning prompts by hand.
+
+All of it under a hard per-user and per-day spend cap with metering, because an
+agent platform without a ceiling is one runaway loop from a memorable invoice.
+This project ran under a $5 cap; `docs/recording-pass.md` accounts for every cent.
