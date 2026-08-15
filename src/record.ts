@@ -81,9 +81,9 @@ export const recordFixtures = async (
 /**
  * What the pass did and what it cost.
  *
- * The spend line is the point: the project runs under a hard cap, and a cap
- * nobody measures against is a hope. The figure printed here is what
- * `docs/recording-pass.md` records.
+ * The spend line is the point: recording is the only command that costs money,
+ * so it reports what it cost rather than leaving that to be guessed. The figure
+ * printed here is what `docs/recording-pass.md` records.
  */
 const summarize = (runs: readonly RecordedRun[], fixturesDir: string, usage: Usage): string => {
   const calls = runs.reduce((total, run) => total + run.calls, 0);

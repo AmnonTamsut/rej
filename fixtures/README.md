@@ -35,10 +35,9 @@ ANTHROPIC_API_KEY=... npm run record -- --demo
 made, and re-recording is the same one command rather than a Question at a time.
 Naming Questions instead (`npm run record -- "<Question>"`) records just those.
 
-This is a Live Mode run and the only sanctioned spend in the project, which runs
-under a hard $5 cap. The command reports what the pass cost in tokens and
-dollars as it finishes; `docs/recording-pass.md` records what the shipped set
-cost.
+This is a Live Mode run and the only sanctioned spend in the project. The
+command reports what the pass cost in tokens and dollars as it finishes;
+`docs/recording-pass.md` records what the shipped set cost.
 
 ## Why a Fixture goes missing
 

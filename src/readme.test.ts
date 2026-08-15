@@ -166,10 +166,10 @@ describe("the README's run instructions", () => {
 
   it("names both things a Live Mode run needs", () => {
     // What it costs is deliberately not asserted, and deliberately not stated.
-    // The cap and the recording bill are this project's constraints, not a
-    // reader's: someone running this brings their own key, and the figures they
-    // would want are per-Question ones nobody has measured. `docs/recording-pass.md`
-    // owns what was actually spent, and the repository map points at it.
+    // The recording bill is this project's figure, not a reader's: someone
+    // running this brings their own key, and the figures they would want are
+    // per-Question ones nobody has measured. `docs/recording-pass.md` owns what
+    // was actually spent, and the repository map points at it.
     const text = readme();
 
     expect(text).toContain(LIVE_FLAG);

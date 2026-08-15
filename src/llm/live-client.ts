@@ -12,7 +12,7 @@ import type { Usage } from "./pricing.js";
 
 /**
  * Room enough for a Specialist Agent's answer. Escalation returns a single word
- * and costs a fraction of this; the cap exists so a runaway answer cannot.
+ * and costs a fraction of this; the ceiling exists so a runaway answer cannot.
  */
 export const MAX_TOKENS = 1024;
 

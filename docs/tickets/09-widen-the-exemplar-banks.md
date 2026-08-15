@@ -10,7 +10,7 @@ This is a data edit. The Local Pass has no rules and no keywords — it embeds t
 
 Widening a Bank is not free of consequence. The thresholds are calibrated against measured scores, and the routing table holds Questions sitting deliberately close to both of them — one at a top-two gap of 0.015 that must stay `both`, one at 0.061 that must stay `hr`. Exemplars added carelessly drag neighbouring Questions across the top-two margin and collapse single-domain Questions into `both`. Moving a boundary is not the same as filling a gap, and the routing table is what tells the two apart.
 
-**This must land before ticket 07.** The recording pass is the project's only sanctioned spend, and it records against whatever the Banks say at the time. Widening them afterwards changes which Questions abstain, which changes which Questions reach Escalation, which invalidates the recordings that pass captured — and re-recording is real money against a hard cap.
+**This must land before ticket 07.** The recording pass is the project's only sanctioned spend, and it records against whatever the Banks say at the time. Widening them afterwards changes which Questions abstain, which changes which Questions reach Escalation, which invalidates the recordings that pass captured — and re-recording is real money.
 
 **Blocked by:** 06 — Agent Meeting for the `both` Route.
 

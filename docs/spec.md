@@ -12,7 +12,7 @@ Three further problems sit behind that:
 
 - Some Questions genuinely need both domains — "should we hire more people?" is a headcount Question and a cash Question at once, and neither Specialist Agent can answer it alone from its own Dataset.
 - An agent that answers in prose about numbers will, sooner or later, state a number that came from nowhere. In a finance answer that is not a cosmetic flaw.
-- The reviewer has no Anthropic key and should not need one, and the author is working under a hard $5 budget cap on a personal account. A system that only demonstrates itself by spending money demonstrates itself to nobody.
+- The reviewer has no Anthropic key and should not need one, and every API call costs money. A system that only demonstrates itself by spending money demonstrates itself to nobody.
 
 ## Solution
 
@@ -56,7 +56,7 @@ The reviewer clones the repo, installs, and runs it with no key and no spend, be
 26. As a maintainer, I want swapping providers to mean writing one file against a documented interface, so that single-provider today does not mean locked-in tomorrow.
 27. As a maintainer, I want a Fixture to be keyed by the exact request that produced it, so that changing a prompt cannot silently keep serving the old recording.
 28. As a maintainer, I want a Fixture miss to fail loudly with an instruction to re-record, so that a stale recording surfaces as an error rather than as a wrong answer.
-29. As a maintainer, I want re-recording Fixtures to be one deliberate, budgeted command, so that refreshing the recordings is a decision rather than an accident.
+29. As a maintainer, I want re-recording Fixtures to be one deliberate command, so that refreshing the recordings is a decision rather than an accident.
 30. As a maintainer, I want Live Mode to require an explicit flag and a key, so that no test run and no casual invocation can spend money.
 31. As a maintainer, I want a hand-edited Fixture to be against the rules and visibly so, so that the demo keeps meaning what it claims to mean.
 32. As a maintainer, I want the first-run model download to be explained before it happens, so that a 25MB download does not read as a hang.
@@ -66,13 +66,13 @@ The reviewer clones the repo, installs, and runs it with no key and no spend, be
 36. As a maintainer, I want an agent that is asked something outside its domain to say so, so that a Router mistake degrades into a visible refusal rather than an invented answer.
 37. As a developer extending the system, I want adding a third Specialist Agent to mean adding a Dataset, a tool set, a prompt, and an Exemplar Bank, so that the growth path is obvious from the existing shape.
 38. As a developer extending the system, I want Escalation to reach the model through the same `LLMClient` seam the agents use, so that there is one path to the API rather than a second one to maintain.
-39. As the author, I want the whole system to run under a hard budget cap, so that producing the deliverable cannot overrun a personal account.
+39. As the author, I want every path that spends to be named and countable, so that producing the deliverable cannot run up a bill nobody noticed.
 40. As an operator, I want the output to say whether the Route came from the Local Pass or from Escalation, so that I can tell a free verdict from a paid one.
 41. As an operator, I want Escalation to be able to return `unclear`, so that a genuinely meaningless Question is not forced into a domain it does not belong to.
 42. As a maintainer, I want Escalation to be always on with no opt-out flag, so that there is one routing behaviour to reason about rather than two modes that drift apart.
 43. As a maintainer, I want Escalation's verdicts served from Fixtures in Replay Mode like every other model call, so that the routing suite stays hermetic and free despite Escalation existing.
-44. As a maintainer, I want a Question the Local Pass places never to reach Escalation, so that the free path stays free and a silent escalation on every Question cannot drain the budget unnoticed.
-45. As the author, I want Escalation to be one small call — no tools, no message history — so that it stays inside the budget cap.
+44. As a maintainer, I want a Question the Local Pass places never to reach Escalation, so that the free path stays free and a silent escalation on every Question cannot spend unnoticed.
+45. As the author, I want Escalation to be one small call — no tools, no message history — so that the one routing step that spends stays the cheapest request the API takes.
 46. As a maintainer, I want frequent Escalation to read as a signal to widen an Exemplar Bank, so that the cheapest fix for spend is also the fix for routing quality.
 
 ## Implementation Decisions
@@ -109,7 +109,7 @@ This reverses the earlier decision that an ambiguous Question costs nothing. Tha
 
 **README.** Ships as part of the deliverable: what the system does, how to run it — Live Mode first, since it is the only mode that answers a Question the reader wrote, then the demo set with no key — the architecture and the reasoning behind it (drawing on the four ADRs), the first-run model download, and the documented next steps.
 
-What a run costs is deliberately not among them, reversing an earlier decision that the README state it. The $5 cap and the recording bill are this project's constraints, not a reader's: someone running this brings their own key. `docs/recording-pass.md` owns those figures and the repository map points at it.
+What a run costs is deliberately not among them, reversing an earlier decision that the README state it. The recording bill is this project's figure, not a reader's: someone running this brings their own key. `docs/recording-pass.md` owns it as Fixture provenance, and the repository map points at it.
 
 ## Testing Decisions
 
@@ -121,7 +121,7 @@ The **Local Pass** is tested directly, with no seam and no network, because it i
 
 **Escalation** is tested through the entry point against Fixtures, like every other model call — it holds no privileged position just because it routes rather than answers. The cases that matter: an Abstention escalates and comes back with a usable Route; a Question Escalation also declines returns a clarification request; and the deciding stage is reported either way.
 
-One negative assertion belongs here and is easy to omit: **a Question the Local Pass places must not escalate.** Assert it rather than assume it. Silent escalation on every Question passes every other test in the suite while quietly spending the budget on each run — it is the failure this design most needs a test for, precisely because nothing else would catch it.
+One negative assertion belongs here and is easy to omit: **a Question the Local Pass places must not escalate.** Assert it rather than assume it. Silent escalation on every Question passes every other test in the suite while quietly spending on each run — it is the failure this design most needs a test for, precisely because nothing else would catch it.
 
 **Scoped Tools.** Tested directly as the pure read-only functions they are.
 
@@ -154,7 +154,7 @@ One negative assertion belongs here and is easy to omit: **a Question the Local 
 ## Further Notes
 
 - **Vocabulary.** `CONTEXT.md` is authoritative. Code identifiers use Router, Route, Question, Specialist Agent, Finance Agent, HR Agent, Dataset, Scoped Tool, Exemplar Bank, Agent Meeting, Number Audit, Live Mode, Replay Mode, Fixture. Notably, "Noah" and "Eva" are theming for the README and prompts only and must not appear as code identifiers.
-- **Budget.** A hard $5 cap on a personal account governs the whole project. Fixture recording is the only sanctioned spend; it should be done once, deliberately, for the full set of demo Questions, and re-done only when a prompt or tool schema changes.
+- **Spend.** Fixture recording is the only sanctioned spend in the project; it should be done once, deliberately, for the full set of demo Questions, and re-done only when a prompt or tool schema changes.
 - **First run.** The embedding model download is roughly 25MB and happens once. Say so in the README and in the console on first run, or it reads as a hang.
 - **Vocabulary for the two stages is settled.** `CONTEXT.md` now defines Local Pass, Escalation, and Abstention, and lists the alternatives under `_Avoid_` — "embedding pass", "classifier", "fallback", "first/second stage" are all out, in code and in prose. The names describe the role rather than the mechanism, consistent with why the Router is not called a classifier.
 - **Router vocabulary is a known cost, no longer a known failure.** An unanticipated phrasing used to degrade to `unclear`; now it escalates and gets routed. The limit did not disappear — it changed currency, from a wrong answer to a small bill. The README should say so plainly, including that thin Exemplar Banks show up as spend rather than as visible misroutes, which is the harder kind of problem to notice.

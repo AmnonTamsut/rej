@@ -69,32 +69,42 @@ where this check fails, kept rather than re-recorded.)
 
 ## 3 — Scale, rate limits, and cost
 
-Fifteen employees at two to three requests a minute is thirty to forty-five a
-minute — small, but bursty, and the limits that bite are per-key and cover tokens
-as well as requests. Every call already goes through one seam
-(`src/llm/client.ts`), so all of the below is one implementation behind one
-interface rather than fifteen call sites to remember.
+Fifteen employees at two to three requests a minute is forty-five a minute, and
+that is not the number that hits the limit. This is Layer 3 traffic —
+per-employee assistants drafting in one person's voice over their retrieved
+history — and one request is an agent turn: several API calls, each carrying a
+large context. The ceiling is per-organisation and meters requests, input tokens
+and output tokens separately, so with meetings bursting N+1 calls on the same
+key, the input-token limit binds first. Rate limits and cost are therefore one
+problem, because tokens are the unit of both: one governor at the seam every call
+already passes through (`src/llm/client.ts`) serves both, and the rest is
+reducing what must pass through it.
 
-1. **Queue and limit.** One shared queue with a token-bucket limiter configured
-   from the account's real requests- and tokens-per-minute; admission by priority,
-   so someone waiting on a chat reply goes ahead of an overnight report; backoff
-   on 429 honouring `retry-after` rather than guessing. Work that cannot be served
-   in time fails visibly, with its place in the queue — a queue whose failures are
-   silent is how a rate limit becomes a support ticket about "the AI being slow".
-2. **Don't call the model.** The largest saving. The Local Pass places a Question
-   against the Exemplar Banks locally, removing one model call from every request
-   and costing nothing per call after a one-time model download.
-3. **Cache what is left.** Prompt caching on the stable prefix, since system
-   prompt plus tool schemas is most of the tokens on a short question. A response
-   cache keyed on the Question plus a version stamp of the underlying data, so an
-   answer expires when the tables move rather than on a guessed timer. And routing
-   verdicts, which this repo deliberately does not cache yet — the same
-   unplaceable Question escalates every time, listed as a next step rather than
-   pretended away.
-4. **Right-size per step.** Placing a Question and combining contributions do not
-   need the largest model, and picking per step against an eval is a bigger lever
-   than tuning prompts by hand.
+1. **Meter what the limit meters.** One queue, a bucket per dimension. Output
+   tokens are unknown before the call, so the queue reserves an estimate and
+   reconciles against reported usage — counting requests alone leaves you under
+   the request ceiling and throttled anyway. It paces on the remaining quota each
+   response reports rather than waiting to be refused, and honours `retry-after`
+   on a 429. Admission by priority: someone waiting on a reply outranks a meeting,
+   which outranks a report. Work that cannot be served in time fails visibly, with
+   its place in the queue — a queue whose failures are silent is how a rate limit
+   becomes a support ticket about "the AI being slow".
+2. **Keep non-interactive work off the interactive budget.** Nightly reports,
+   competitor monitoring, and the backfill that learns an employee's style are not
+   answers anyone is waiting for; they belong on the batch endpoint — half price,
+   separate limits — so a report cannot contend with a person. And the cheapest
+   call is the one not made: the Local Pass places a Question against the Exemplar
+   Banks on the machine.
+3. **Cache the prefix, scope the cache, size the model.** An assistant's system
+   prompt, tool schemas, and one employee's style context are a large stable
+   prefix reused on every draft they make; cached, it reads at about a tenth of
+   input price and pays for itself on the second request. Shared department
+   answers cache too, but the key must include the caller's read scope — text
+   alone hands one department's answer to another and makes the cache the one path
+   around the boundary in question 1 — plus a version stamp of the data, so an
+   answer expires when the tables move rather than on a timer. Cheaper tokens are
+   the same lever as fewer: placing a Question and combining contributions need no
+   frontier model, and the spread across tiers is roughly fivefold.
 
 All of it under a hard per-user and per-day spend cap with metering, because an
 agent platform without a ceiling is one runaway loop from a memorable invoice.
-This project ran under a $5 cap; `docs/recording-pass.md` accounts for every cent.

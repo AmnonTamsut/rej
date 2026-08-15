@@ -2,7 +2,7 @@
 
 Every recording in `fixtures/` came from one deliberate Live Mode run on
 **14 August 2026**, as the `recordedAt` stamp in each file says. This is what
-that run did and what it cost, so the project's one claim about spending can be
+that run did and what it cost, so the provenance of every shipped Fixture can be
 checked rather than taken on trust.
 
 ```
@@ -18,7 +18,6 @@ npm run record -- --demo
 | Input tokens | 23,547 |
 | Output tokens | 3,104 |
 | Cost | **$0.1172** |
-| Project cap | $5.00 — this pass used 2.3% of it |
 
 The figures are the record command's own, not an estimate: token counts come
 back from the API on every call, are accumulated across the pass by
@@ -28,7 +27,8 @@ an upper bound — the introductory rate of $2.00 / $10.00 applies through
 31 August 2026, so the pass was billed at less than the figure above.
 
 Re-running the command reports its own spend the same way. Add it to the tally
-below rather than overwriting this one, and check the total still clears the cap.
+below rather than overwriting this one, so the provenance of the shipped
+Fixtures stays readable as a history rather than a single figure.
 
 | Pass | Date | Calls | Cost | Why |
 | --- | --- | --- | --- | --- |

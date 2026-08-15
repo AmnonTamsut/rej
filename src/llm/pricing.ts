@@ -1,14 +1,10 @@
 /**
- * What a Live Mode run costs, so the project's budget claim is measured rather
- * than asserted.
+ * What a Live Mode run costs, so the spend is measured rather than asserted.
  *
- * Recording is the only sanctioned spend here and it runs under a hard cap, so
- * the record command reports what it spent as it spends it. Everything needed to
- * price a run is in this file: two rates and a cap.
+ * Recording is the only sanctioned spend here, so the record command reports
+ * what it spent as it spends it. Everything needed to price a run is in this
+ * file: two rates.
  */
-
-/** The hard cap on the whole project, from the spec: a personal account, $5. */
-export const BUDGET_CAP_USD = 5;
 
 /**
  * List price for `claude-sonnet-5`, in US dollars per million tokens, as
@@ -16,7 +12,7 @@ export const BUDGET_CAP_USD = 5;
  *
  * These are the standard rates. An introductory discount (2.00 in / 10.00 out)
  * applies through 2026-08-31, so a run priced here is an upper bound on what is
- * actually billed — which is the direction a budget check should err in. Rates
+ * actually billed — which is the direction an estimate should err in. Rates
  * move; a figure quoted in a document does not. Re-check them here rather than
  * anywhere else if the model or the pricing changes.
  */
@@ -41,9 +37,10 @@ const costOf = ({ inputTokens, outputTokens }: Usage): number =>
 /**
  * The spend line an operator reads after a recording pass.
  *
- * It names the cap as well as the cost, because a number with nothing to compare
- * it to is not a budget check. Cents are shown to four places: a pass that costs
- * a fifth of a cent should say so rather than round to "$0.00" and read as free.
+ * It names the rates as well as the cost, because a total with no rate behind it
+ * cannot be re-derived when the pricing moves. Cents are shown to four places: a
+ * pass that costs a fifth of a cent should say so rather than round to "$0.00"
+ * and read as free.
  */
 export const formatSpend = (usage: Usage): string => {
   const cost = costOf(usage);
@@ -52,6 +49,6 @@ export const formatSpend = (usage: Usage): string => {
     `${usage.inputTokens.toLocaleString("en-US")} input and ` +
     `${usage.outputTokens.toLocaleString("en-US")} output tokens, ` +
     `costing about $${cost.toFixed(4)} at $${RATE_USD_PER_MILLION.input.toFixed(2)}/$${RATE_USD_PER_MILLION.output.toFixed(2)} ` +
-    `per million — ${((cost / BUDGET_CAP_USD) * 100).toFixed(1)}% of the $${BUDGET_CAP_USD} project cap.`
+    `per million.`
   );
 };

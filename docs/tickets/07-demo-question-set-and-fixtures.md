@@ -4,7 +4,7 @@
 
 Choosing these Questions is a design decision, not an afterthought — they are what a reviewer sees first. The set must cover all four Routes, at least one Question the Local Pass abstains on so Escalation is visible in the demo, at least one out-of-domain refusal, and the "should we hire more people?" Agent Meeting the assessment calls out by name.
 
-Recording is the only sanctioned spend in the project and the whole thing runs under a hard budget cap. Do it once, deliberately, for the full set — not question by question. Re-record only when a prompt or a tool schema changes, which the Fixture keying will force anyway.
+Recording is the only sanctioned spend in the project. Do it once, deliberately, for the full set — not question by question. Re-record only when a prompt or a tool schema changes, which the Fixture keying will force anyway.
 
 After the pass, the entire suite and the entire demo must run from a clean clone in Replay Mode with no key, no spend, and no network beyond the one-time embedding model download.
 
@@ -22,7 +22,7 @@ The recorded-not-written rule needs to be stated where a contributor will actual
 - [x] The set includes an out-of-domain Question producing a refusal
 - [x] The set includes "should we hire more people?" driving a full Agent Meeting
 - [x] Fixtures for the whole set are captured in one recording pass
-- [x] The spend for the pass is recorded, and it lands inside the project budget cap
+- [x] The spend for the pass is measured and recorded
 - [x] The full suite passes from a clean clone in Replay Mode with no key
 - [x] The full demo runs from a clean clone with no key
 - [x] The recorded-not-written rule is stated where a contributor changing Fixtures will encounter it
@@ -31,7 +31,7 @@ The recorded-not-written rule needs to be stated where a contributor will actual
 
 **On the sixth line:** the shipped Fixtures are one pass, and the first pass is not the one that shipped. It recorded two Questions whose outcomes showed nothing — the Finance Agent asked which quarter "last quarter" meant (the Dataset holds Q1, Q2, Q3 and year to date, so it was right to ask), and in the meeting both agents offered to fetch figures rather than fetching them. Neither was a bad model response; both were the demo asking the wrong thing. The payroll Question now names its quarter, and `contributionBrief` in `meeting.ts` tells each attendee its answer will be combined with another's, so it reads its tools instead of offering to. Then one pass, from an empty `fixtures/`.
 
-**On the seventh line:** the spend is measured rather than asserted. Token counts come back from the API on every call and leave the live adapter through a callback — a side channel, so no token count enters a Fixture or crosses the `LLMClient` seam — are priced in `src/llm/pricing.ts`, and are printed as the last line the record command writes. `docs/recording-pass.md` carries that output: $0.1172 for the shipped pass, $0.1931 across both passes, against a $5 cap.
+**On the seventh line:** the spend is measured rather than asserted. Token counts come back from the API on every call and leave the live adapter through a callback — a side channel, so no token count enters a Fixture or crosses the `LLMClient` seam — are priced in `src/llm/pricing.ts`, and are printed as the last line the record command writes. `docs/recording-pass.md` carries that output: $0.1172 for the shipped pass, $0.1931 across both passes.
 
 **On the eighth and ninth lines:** both are checked as processes, not function calls. `offline.test.ts` runs `src/demo.ts` with the key stripped from the environment and every outbound connection pointed at a dead proxy, and asserts the demo's own closing line. That is the acceptance line for a clean clone, minus the clone.
 

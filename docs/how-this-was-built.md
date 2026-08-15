@@ -32,8 +32,8 @@ Three things the tree is worth reading for.
 append-only, so the number records when the work was *identified*, not when it
 ran. Widening the Exemplar Banks had to land before the recording pass in 07,
 because Fixtures are keyed by the whole request and a Bank edit changes which
-Questions abstain — recording first would have meant paying twice against a hard
-$5 cap. The dependency, and the reason, are written into ticket 09 itself.
+Questions abstain — recording first would have meant paying for the same pass
+twice. The dependency, and the reason, are written into ticket 09 itself.
 
 **03 is the fork.** The agent runtime was designed once, under the Finance Agent,
 and 04 and 05 both hang off it: the HR Agent reuses the runtime rather than

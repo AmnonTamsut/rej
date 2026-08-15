@@ -6,9 +6,9 @@ import { oneShot, textOf } from "../llm/client.js";
  * Escalation: place a Question the Local Pass abstained on.
  *
  * One call, no tools, no history — the smallest request the API takes, because
- * this is the only routing step that spends and it runs under a hard budget
- * cap. It is always on: there is no flag that disables it and no pure-local
- * mode, per ADR 0005.
+ * this is the only routing step that spends and it runs on every Question the
+ * Local Pass cannot place. It is always on: there is no flag that disables it
+ * and no pure-local mode, per ADR 0005.
  */
 
 /**

@@ -4,7 +4,7 @@ import { askQuestion } from "./ask.js";
 import { DEMO_QUESTIONS } from "./demo.js";
 import { replayClient } from "./llm/fixtures.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
-import { BUDGET_CAP_USD, formatSpend } from "./llm/pricing.js";
+import { formatSpend } from "./llm/pricing.js";
 import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
 import { DEMO_FLAG, recordFixtures, runRecord } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
@@ -165,14 +165,14 @@ describe("running the record command", () => {
 });
 
 describe("what a recording pass reports about its spend", () => {
-  it("prices the pass against the project's cap", () => {
+  it("prices the pass from the tokens the API reported", () => {
     // 10,000 input at $3/M and 2,000 output at $15/M is $0.06.
     const line = formatSpend({ inputTokens: 10_000, outputTokens: 2_000 });
 
     expect(line).toContain("10,000 input");
     expect(line).toContain("2,000 output");
     expect(line).toContain("$0.0600");
-    expect(line).toContain(`$${BUDGET_CAP_USD} project cap`);
+    expect(line).toContain("$3.00/$15.00 per million");
   });
 
   it("shows a fraction of a cent as a fraction of a cent, rather than as free", () => {
