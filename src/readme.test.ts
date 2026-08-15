@@ -7,7 +7,8 @@ import { DEMO_QUESTIONS } from "./demo.js";
 import { LIVE_ASK_COMMAND } from "./llm/fixtures.js";
 import { LIVE_FLAG } from "./llm/live-flag.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
-import { EMBEDDING_MODEL_DOWNLOAD_MB, loadEmbedder } from "./router/embedder.js";
+import { EMBEDDING_MODEL, EMBEDDING_MODEL_DOWNLOAD_MB, loadEmbedder } from "./router/embedder.js";
+import { SCORE_FLOOR, TOP_TWO_MARGIN } from "./router/thresholds.js";
 import { abstentionsIn, survey } from "./survey.js";
 
 /**
@@ -178,6 +179,13 @@ describe("the README's run instructions", () => {
   it("explains the first-run model download, at the size the embedder reports", () => {
     expect(readme()).toMatch(new RegExp(`~?${EMBEDDING_MODEL_DOWNLOAD_MB}\\s?MB`, "i"));
   });
+
+  it("names the embedding model the Local Pass is actually calibrated against", () => {
+    // The thresholds below are this model's numbers — `thresholds.ts` says so.
+    // Swapping the model without revisiting them would leave the README naming
+    // one model and quoting another's floor.
+    expect(readme()).toContain(EMBEDDING_MODEL);
+  });
 });
 
 describe("the README's sample runs", () => {
@@ -299,6 +307,16 @@ describe("the README's account of the design", () => {
     for (const part of ["Dataset", "Scoped Tool", "prompt", "Exemplar Bank"]) {
       expect(growth).toContain(part);
     }
+  });
+
+  it("quotes the two thresholds at the values the Local Pass actually uses", () => {
+    // Quoted from the module that owns them, not from themselves. Tuning is
+    // meant to be a one-number edit in `thresholds.ts`, and a README still
+    // naming the old floor would describe a Router nobody has any more.
+    const text = readme();
+
+    expect(text).toContain(`\`${SCORE_FLOOR}\``);
+    expect(text).toContain(`\`${TOP_TWO_MARGIN}\``);
   });
 
   it("lists the next steps that were deliberately not built", () => {

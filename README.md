@@ -97,18 +97,21 @@ each. The general case behind all of them, at eight agents rather than two, is i
 
 ### The Router
 
-The Router maps a Question to a Route without answering it. Asking a model costs
-a round-trip on every Question and gives a non-deterministic answer to a decision
-that has to be testable. So the **Local Pass** runs first: it embeds the Question
-locally and scores it by maximum cosine similarity against three **Exemplar
-Banks** (`finance`, `hr`, `both`). Two named thresholds in
-`src/router/thresholds.ts` carry the hard cases — a score floor below which the
-Local Pass abstains, and a top-two margin below which the Question is
-cross-cutting and the Route is `both`.
+The Router maps a Question to a Route without answering it. Asking a model on
+every Question costs a round-trip and gives a non-deterministic answer to a
+decision that has to be testable, so the free stage runs first and only what it
+cannot place reaches the paid one.
 
-A Question it cannot place is not refused. The **Abstention** triggers
-**Escalation**: one model call, no tools, no history, returning one of the same
-three Routes or `unclear`. The ordering is the whole design — the common case
+| | **Local Pass** | **Escalation** |
+| --- | --- | --- |
+| Mechanism | Vector embedding, on this machine | An LLM classifier: one model call, no tools, no history |
+| Model | `Xenova/all-MiniLM-L6-v2`, q8-quantized | Claude |
+| Decides by | Cosine similarity against three **Exemplar Banks** (`finance`, `hr`, `both`), best score per Bank | A one-word reply naming a Route; an answer naming two or none becomes `unclear` |
+| Thresholds | Abstains below `0.4`; answers `both` when the top two Banks are within `0.05` (`src/router/thresholds.ts`) | — |
+| Costs | Nothing, and repeats exactly | One call, and does not |
+
+A Question the Local Pass cannot place is not refused. The **Abstention**
+triggers Escalation, and that ordering is the whole design — the common case
 stays free and deterministic, and both spend and non-determinism are confined to
 exactly the Questions a purely local Router would have failed outright. An
 Abstention never reaches the operator; `unclear` is a Route only Escalation can

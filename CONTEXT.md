@@ -38,15 +38,17 @@ _Avoid_: intent, category
 
 **Router**:
 The component that maps a Question to a Route without answering it. It has two stages: the Local Pass and Escalation.
-_Avoid_: dispatcher, classifier (names a mechanism, not the role)
+_Avoid_: dispatcher
+
+A stage's role and its mechanism are both nameable. `Router`, `Local Pass` and `Escalation` are the roles, and they are what the code is named after; vector embedding and LLM classifier are the mechanisms behind two of them, and prose may say so. What is not allowed is a third name for the same role.
 
 **Local Pass**:
-The Router's first stage, which places a Question against the Exemplar Banks without leaving the machine or spending anything. It either produces a Route or abstains.
+The Router's first stage, which places a Question against the Exemplar Banks without leaving the machine or spending anything. It either produces a Route or abstains. Its mechanism is vector embedding: the Question and every exemplar become vectors, compared by cosine similarity.
 _Avoid_: embedding pass, first stage, local stage, fast path
 
 **Escalation**:
-The Router's second stage, which places a Question the Local Pass abstained on. It is the only routing step that spends.
-_Avoid_: classifier, LLM fallback, second stage, slow path
+The Router's second stage, which places a Question the Local Pass abstained on. It is the only routing step that spends. Its mechanism is an LLM classifier: one model call that returns a Route and nothing else.
+_Avoid_: LLM fallback, second stage, slow path
 
 **Abstention**:
 The Local Pass declining to place a Question. It is not a Route — it never reaches the operator, and its only consequence is to trigger Escalation.
