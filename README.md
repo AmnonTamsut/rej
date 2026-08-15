@@ -1,6 +1,6 @@
 # Two Specialist Agents behind a deterministic Router
 
-<video src="https://github.com/AmnonTamsut/rej/raw/main/docs/media/two-agents-explainer.mp4" poster="https://github.com/AmnonTamsut/rej/raw/main/docs/media/two-agents-explainer-poster.png" controls muted playsinline width="100%"></video>
+<video src="docs/media/two-agents-explainer.mp4" poster="docs/media/two-agents-explainer-poster.png" controls muted playsinline width="100%"></video>
 
 **A 1m42s walkthrough** — the problem the assessment sets, then the five sections
 this system is built out of: structural isolation, the two-stage Router, the
