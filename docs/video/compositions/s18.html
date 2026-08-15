@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Head is metadata for this source file only; the runtime discards it. -->
+  </head>
+  <body>
+    <template>
+      <style>
+  @font-face { font-family: "DejaVu Serif"; font-weight: 400; font-style: normal;
+               src: local("DejaVu Serif"), local("DejaVu Serif Book"); }
+  @font-face { font-family: "DejaVu Serif"; font-weight: 700; font-style: normal;
+               src: local("DejaVu Serif Bold"); }
+  @font-face { font-family: "DejaVu Serif"; font-weight: 400; font-style: italic;
+               src: local("DejaVu Serif Italic"); }
+  @font-face { font-family: "Liberation Mono"; font-weight: 400; font-style: normal;
+               src: local("Liberation Mono"), local("Liberation Mono Regular"); }
+  @font-face { font-family: "Liberation Mono"; font-weight: 700; font-style: normal;
+               src: local("Liberation Mono Bold"); }
+
+  #root { position: absolute; inset: 0; overflow: hidden; }
+  #root .glow {
+    position: absolute; left: -240px; top: -300px; width: 1500px; height: 1200px;
+    background: radial-gradient(closest-side, rgba(160,158,242,.16), rgba(160,158,242,0) 72%);
+    pointer-events: none;
+  }
+  #root .stage {
+    position: absolute; inset: 0; padding: 62px 110px 74px;
+    display: flex; flex-direction: column;
+    font-family: "DejaVu Serif", Georgia, serif; color: #EDEBF3;
+  }
+  #root .slate {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 24px; letter-spacing: .16em;
+    text-transform: uppercase; color: #8A8698;
+    padding-bottom: 20px; border-bottom: 2px solid #332F3E; flex: none;
+  }
+  #root .slate .ct { font-variant-numeric: tabular-nums; }
+  #root .body { flex: 1 1 auto; min-height: 0; padding-top: 46px; display: flex; flex-direction: column; }
+
+  #root .eyebrow {
+    display: flex; align-items: center; gap: 22px; margin: 0 0 26px;
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 24px; letter-spacing: .18em;
+    text-transform: uppercase; color: #8A8698; opacity: 0;
+  }
+  #root .eyebrow i { display: block; flex: 1; height: 2px; background: #332F3E; }
+  #root .eyebrow.fin { color: #E4A768; }
+  #root .eyebrow.hr { color: #A09EF2; }
+
+  #root .claim {
+    margin: 0 0 30px; line-height: 1.1; font-weight: 700; letter-spacing: -.018em;
+    max-width: 25ch; opacity: 0;
+  }
+  #root .lede {
+    margin: 0 0 30px; font-size: 38px; line-height: 1.42; color: #A8A4B4;
+    max-width: 46ch; opacity: 0;
+  }
+  #root .lede b, #root .card p b, #root .bullets b, #root .note b { color: #EDEBF3; font-weight: 700; }
+
+  #root .note {
+    margin: auto 0 0; padding-top: 24px; border-top: 2px solid #332F3E;
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 23px; line-height: 1.58;
+    color: #8A8698; max-width: 108ch; opacity: 0;
+  }
+  #root .note b { color: #A8A4B4; }
+
+  #root code {
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: .88em; background: #232130;
+    padding: 2px 9px; border-radius: 3px; color: #EDEBF3;
+  }
+
+  #root .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; }
+  #root .card {
+    border: 2px solid #332F3E; background: #1B1A23; border-radius: 3px;
+    padding: 34px 38px 38px; opacity: 0; transform-origin: 50% 50%; will-change: transform;
+  }
+  #root .card h3 { margin: 0 0 14px; font-size: 35px; line-height: 1.22; font-weight: 700; }
+  #root .card p { margin: 0; font-size: 29px; line-height: 1.45; color: #A8A4B4; }
+  #root .card.fin { border-color: #7A5C39; background: #2A2018; }
+  #root .card.fin h3, #root .card.fin .tag { color: #E4A768; }
+  #root .card.hr { border-color: #4C4A9B; background: #1E1D34; }
+  #root .card.hr h3, #root .card.hr .tag { color: #A09EF2; }
+  #root .card.bad { border-color: #EE8878; background: #2E1B18; }
+  #root .card.bad h3, #root .card.bad .tag { color: #EE8878; }
+
+  #root .tag {
+    display: block; margin-bottom: 14px; font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 21px;
+    letter-spacing: .16em; text-transform: uppercase; color: #8A8698;
+  }
+
+  #root .steps { display: flex; flex-direction: column; gap: 30px; }
+  #root .step { display: grid; grid-template-columns: 68px 1fr; gap: 22px; align-items: start; opacity: 0;
+                transform-origin: 0% 50%; will-change: transform; }
+  #root .step .idx {
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 23px; color: #8A8698;
+    padding-top: 10px; font-variant-numeric: tabular-nums;
+  }
+  #root .step h3 { margin: 0 0 8px; font-size: 34px; font-weight: 700; }
+  #root .step p { margin: 0; font-size: 28px; line-height: 1.44; color: #A8A4B4; max-width: 62ch; }
+
+  #root .bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+  #root .bullets li {
+    position: relative; padding-left: 34px; font-size: 30px; line-height: 1.42;
+    color: #A8A4B4; max-width: 76ch; opacity: 0;
+    transform-origin: 0% 50%; will-change: transform;
+  }
+  #root .bullets li::before {
+    content: ""; position: absolute; left: 0; top: .66em; width: 18px; height: 2px; background: #4A4658;
+  }
+  #root .bullets.tight li { font-size: 27px; gap: 18px; }
+
+  #root .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+
+  #root .tablewrap { opacity: 0; transform-origin: 50% 50%; will-change: transform; }
+  #root .cmp { border-collapse: collapse; width: 100%; font-size: 28px; }
+  #root .cmp th, #root .cmp td { text-align: left; vertical-align: top; padding: 17px 24px; border-bottom: 2px solid #332F3E; }
+  #root .cmp thead th {
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 21px; letter-spacing: .14em; text-transform: uppercase;
+    color: #8A8698; font-weight: 400; border-bottom: 2px solid #4A4658;
+  }
+  #root .cmp tbody th {
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 22px; color: #8A8698; font-weight: 400; white-space: nowrap;
+  }
+  #root .cmp td { color: #A8A4B4; }
+  #root .cmp td.hi { color: #EDEBF3; }
+
+  #root .scoreblock { display: flex; flex-direction: column; gap: 20px; }
+  #root .scores { display: flex; flex-direction: column; gap: 16px; }
+  #root .score {
+    display: grid; grid-template-columns: 150px 1fr 120px; align-items: center; gap: 26px;
+    font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 27px; color: #A8A4B4;
+  }
+  #root .score .track { display: block; height: 18px; background: #232130; border-radius: 2px; overflow: hidden; }
+  #root .score .track i {
+    display: block; width: 100%; height: 100%; background: #4A4658;
+    transform-origin: 0% 50%; will-change: transform;
+  }
+  #root .score.fin .track i { background: #E4A768; }
+  #root .score.fin .bank { color: #E4A768; }
+  #root .score.hr .track i { background: #A09EF2; }
+  #root .score.hr .bank { color: #A09EF2; }
+  #root .score .val { text-align: right; font-variant-numeric: tabular-nums; }
+  #root .scorefoot {
+    margin: 6px 0 0; font-size: 28px; line-height: 1.44; color: #A8A4B4; max-width: 84ch; opacity: 0;
+  }
+
+  #root .term {
+    margin: 0; font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 24px; line-height: 1.54;
+    background: #232130; border: 2px solid #332F3E; border-radius: 3px;
+    padding: 28px 34px; color: #A8A4B4; white-space: pre-wrap;
+    opacity: 0; transform-origin: 50% 50%; will-change: transform;
+  }
+  #root .term b { color: #EDEBF3; font-weight: 700; }
+  #root .term s { text-decoration: none; }
+  #root .term .rf { color: #E4A768; }
+  #root .term .rh { color: #A09EF2; }
+  #root .term .rb { color: #EDEBF3; }
+  #root .term .ok { color: #74C9A0; }
+  #root .term .bad { color: #EE8878; }
+  #root .term .dim { color: #8A8698; }
+
+  #root .figure { opacity: 0; transform-origin: 50% 50%; will-change: transform; }
+  #root .diagram { display: block; width: 100%; height: auto; }
+  #root .bx { fill: #1B1A23; stroke: #4A4658; stroke-width: 2; }
+  #root .bx-n { fill: #232130; }
+  #root .bx-f { fill: #2A2018; stroke: #7A5C39; }
+  #root .bx-h { fill: #1E1D34; stroke: #4C4A9B; }
+  #root .lb { font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 28px; fill: #EDEBF3; }
+  #root .lbs { font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 21px; fill: #8A8698; }
+  #root .lb-f, #root .lbs-f { fill: #E4A768; }
+  #root .lb-h, #root .lbs-h { fill: #A09EF2; }
+  #root .wire { stroke: #4A4658; stroke-width: 2.5; fill: none; }
+  #root .wire-d { stroke: #4A4658; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; }
+  #root .split { stroke: #4A4658; stroke-width: 2; stroke-dasharray: 4 9; }
+</style>
+
+      <div id="root" data-composition-id="s18"
+           data-width="1920" data-height="1080" data-duration="16">
+        <div class="glow" id="s18-glow" data-layout-ignore="true"></div>
+        <div class="stage">
+          <div class="slate">
+            <span>It runs</span>
+            <span class="ct">18 / 20</span>
+          </div>
+          <div class="body">
+            <p class="eyebrow " id="s18-w1">The audit failing, on purpose<i></i></p>
+            <h2 class="claim" id="s18-w2" style="font-size:88px">The demo ships a meeting where the check fires.</h2>
+            <pre class="term" id="s18-t3">Question: <b>Should we hire more people?</b>
+
+Route:    <s class="rb">both</s>      (Local Pass)
+Meeting:  <s class="rf">Finance Agent</s>, <s class="rh">HR Agent</s>
+
+<b>Fill the existing open roles; do not add headcount beyond them.</b>
+
+[…] the Finance Agent reports a year-to-date operating loss of
+roughly $1,021,000, with payroll the largest expense line at
+$3,100,000 (62% of expenses) for 48 people.
+
+<s class="bad">Number Audit: FAILED — no Scoped Tool result accounts for
+1,021,000, 62 in the joint recommendation above.</s></pre>
+            <p class="note" id="s18-p4">Both figures are derived — the loss from revenue minus expenses, the percentage from payroll over expenses. Correct arithmetic; no tool returned either.</p>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        (function () {
+          var tl = gsap.timeline({ paused: true });
+  tl.set("#s18-w1", { opacity: 1, y: 34 }, 0.100);
+  tl.to("#s18-w1", { y: 0, duration: 0.13, ease: "power4.out" }, 0.100);
+  tl.set("#s18-w2", { opacity: 1, y: 74 }, 0.213);
+  tl.to("#s18-w2", { y: 0, duration: 0.19, ease: "power4.out" }, 0.213);
+  tl.fromTo("#s18-t3", { scale: 0.94, opacity: 0, y: 22 }, { scale: 1, opacity: 1, y: 0, duration: 0.52, ease: "power3.out" }, 0.937);
+  tl.fromTo("#s18-p4", { scale: 0.94, opacity: 0, y: 22 }, { scale: 1, opacity: 1, y: 0, duration: 0.52, ease: "power3.out" }, 1.437);
+  tl.fromTo("#s18-glow", { scale: 1, opacity: 0.34 }, { scale: 1.14, opacity: 0.52, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 3 }, 0);
+          window.__timelines["s18"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
