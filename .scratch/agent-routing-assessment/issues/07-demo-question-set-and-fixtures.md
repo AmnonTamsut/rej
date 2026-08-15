@@ -10,7 +10,7 @@ After the pass, the entire suite and the entire demo must run from a clean clone
 
 The recorded-not-written rule needs to be stated where a contributor will actually hit it, not only in an ADR. A Fixture edited by hand to make a test pass destroys the thing the demo is claiming.
 
-**Blocked by:** 06 — Agent Meeting for the `both` Route.
+**Blocked by:** 06 — Agent Meeting for the `both` Route; 09 — Widen the Exemplar Banks against unanticipated phrasings. (Recording before 09 lands captures Fixtures the Bank edit would invalidate, and re-recording is real money against a hard cap.)
 
 **Status:** ready-for-agent
 
