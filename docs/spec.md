@@ -107,7 +107,9 @@ This reverses the earlier decision that an ambiguous Question costs nothing. Tha
 
 **Toolchain.** TypeScript on Node, run directly from source, with Vitest as the test runner. No build step is required to run the demo or the tests.
 
-**README.** Ships as part of the deliverable: what the system does, how to run it in Replay Mode with no key, how to run Live Mode and what it costs, the architecture and the reasoning behind it (drawing on the four ADRs), the first-run model download, and the documented next steps.
+**README.** Ships as part of the deliverable: what the system does, how to run it — Live Mode first, since it is the only mode that answers a Question the reader wrote, then the demo set with no key — the architecture and the reasoning behind it (drawing on the four ADRs), the first-run model download, and the documented next steps.
+
+What a run costs is deliberately not among them, reversing an earlier decision that the README state it. The $5 cap and the recording bill are this project's constraints, not a reader's: someone running this brings their own key. `docs/recording-pass.md` owns those figures and the repository map points at it.
 
 ## Testing Decisions
 

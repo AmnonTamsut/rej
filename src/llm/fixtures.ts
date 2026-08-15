@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { JsonValue, LLMClient, LLMRequest, LLMResponse } from "./client.js";
 import { canonicalJson, fixtureKey, sha256 } from "./fixture-key.js";
-import { LIVE_FLAG } from "./flags.js";
+import { LIVE_FLAG } from "./live-flag.js";
 
 /**
  * How a contributor gets a Fixture: by recording it, never by writing it.

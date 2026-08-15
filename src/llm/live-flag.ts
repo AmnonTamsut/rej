@@ -1,8 +1,9 @@
 /**
  * The flag that opts a run into spending.
  *
- * It sits in a leaf of its own rather than beside the code that reads it.
- * `mode.ts` decides which side of the seam a run is on and imports `fixtures.ts`
+ * It holds one string and is named for it. The leaf exists for one reason and
+ * should not accumulate a second: it sits apart from the code that reads it
+ * because `mode.ts` decides which side of the seam a run is on and imports `fixtures.ts`
  * to serve the replay side; `fixtures.ts` reports a miss and has to name the flag
  * that would have answered the Question instead. Holding the name here is what
  * lets both files print the same string without importing each other.

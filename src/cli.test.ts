@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "./cli.js";
 import type { LLMResponse } from "./llm/client.js";
 import { RECORD_COMMAND } from "./llm/fixtures.js";
-import { LIVE_FLAG } from "./llm/flags.js";
+import { LIVE_FLAG } from "./llm/live-flag.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
 import { asksFor, says, scratchFixturesDir, scriptedClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";

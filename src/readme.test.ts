@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "./cli.js";
 import { DEMO_QUESTIONS } from "./demo.js";
-import { LIVE_FLAG } from "./llm/flags.js";
+import { LIVE_ASK_COMMAND } from "./llm/fixtures.js";
+import { LIVE_FLAG } from "./llm/live-flag.js";
 import { API_KEY_VARIABLE } from "./llm/mode.js";
 import { EMBEDDING_MODEL_DOWNLOAD_MB, loadEmbedder } from "./router/embedder.js";
 import { abstentionsIn, survey } from "./survey.js";
@@ -152,6 +153,14 @@ describe("the README's run instructions", () => {
 
     expect(referenced.length).toBeGreaterThan(0);
     expect(referenced.filter((file) => !existsSync(path.join(repoRoot, file)))).toEqual([]);
+  });
+
+  it("shows the live invocation the code itself hands out on a Fixture miss", () => {
+    // Two copies of one command line: this one, and the one a miss prints. A
+    // reader who follows the README and a reader who follows the error should
+    // type the same thing, and the way to keep that true is to fail here when
+    // they diverge.
+    expect(readme()).toContain(LIVE_ASK_COMMAND.replace('"<the Question>"', ""));
   });
 
   it("names both things a Live Mode run needs", () => {

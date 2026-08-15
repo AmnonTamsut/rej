@@ -2,7 +2,7 @@ import type { AgentMeeting } from "./agents/meeting.js";
 import { askQuestion } from "./ask.js";
 import type { NumberAudit } from "./audit/number-audit.js";
 import { type CliResult, runAsCommand, unknownFlagResult, unknownFlags } from "./command.js";
-import { LIVE_FLAG } from "./llm/flags.js";
+import { LIVE_FLAG } from "./llm/live-flag.js";
 import { API_KEY_VARIABLE, chooseMode, clientFor, environmentFrom } from "./llm/mode.js";
 import { rankBanks, type BankScores } from "./router/local-pass.js";
 import type { RoutingStage } from "./router/router.js";

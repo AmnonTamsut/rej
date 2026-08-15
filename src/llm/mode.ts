@@ -1,5 +1,5 @@
 import type { LLMClient } from "./client.js";
-import { LIVE_FLAG } from "./flags.js";
+import { LIVE_FLAG } from "./live-flag.js";
 import { DEFAULT_FIXTURES_DIR, replayClient } from "./fixtures.js";
 import { liveClient } from "./live-client.js";
 

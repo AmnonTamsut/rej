@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { oneShot } from "./client.js";
 import { DEFAULT_FIXTURES_DIR } from "./fixtures.js";
-import { LIVE_FLAG } from "./flags.js";
+import { LIVE_FLAG } from "./live-flag.js";
 import { chooseMode, clientFor, environmentFrom } from "./mode.js";
 import { scratchFixturesDir } from "./testing.js";
 

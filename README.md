@@ -51,20 +51,21 @@ npm install
 
 **The first run downloads about 25MB.** The Local Pass uses a local embedding
 model (`Xenova/all-MiniLM-L6-v2`, quantized), fetched once into `.model-cache/`
-and reused from disk. It is announced on stderr while it happens.
+and reused from disk. It is announced on stderr while it happens, and it is the
+only network access any default run makes.
 
 ### 2. Ask it a Question of your own
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...
-npm run ask -- --live "How much cash is left in the bank?"
+npm run ask -- --live "Can we afford two more engineers?"
 ```
 
 **Prints the Route, the Router stage that decided it, the answering agent, the
 answer, and the Number Audit's verdict, then the per-bank scores behind the
-Route.** Any Question works here, including one the Exemplar Banks have never
-seen — that is what the `--live` flag buys, and without it the run answers only
-the recorded Questions below.
+Route** — or, on the `unclear` Route, the request to rephrase and the scores
+alone. Ask it anything: `--live` is what lets a Question be one nobody recorded,
+and without the flag the run answers only the seven below.
 
 ### 3. Watch it handle the whole demo set
 
@@ -84,7 +85,8 @@ npm test
 npm run typecheck
 ```
 
-**Both run offline and without a key**, on the same path `npm run demo` uses.
+**Both run without a key and without reaching the network**, on the same path
+`npm run demo` uses.
 
 ## Architecture
 
@@ -255,7 +257,7 @@ longer does.
 | `src/agents/meeting.ts` | The Agent Meeting: two scoped views combined into one attributable recommendation. ADR 0004. |
 | `src/audit/number-audit.ts` | The Number Audit, and the full statement of its rule. |
 | `src/llm/client.ts` | The one seam every model call goes through, with the live and replay adapters behind it. ADR 0003. |
-| `src/llm/fixtures.ts` | Fixture keying: a digest over the whole request, so a prompt edit invalidates its recordings. ADR 0001. |
+| `src/llm/fixtures.ts` | Fixture keying: a digest over the whole request, so a prompt edit invalidates its recordings. A miss is a hard error, never a quiet call to the API. ADR 0001. |
 | `src/demo.ts`, `src/survey.ts` | The demo Question set; the Abstention survey. |
 | `fixtures/` | The recordings Replay Mode serves. |
 | `docs/written-answers.md` | The assessment's three written answers. |
