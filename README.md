@@ -1,11 +1,12 @@
 # Two Specialist Agents behind a deterministic Router
 
-[![The opening frame of the walkthrough: a system prompt is not a security boundary](docs/media/two-agents-explainer-poster.png)](docs/media/two-agents-explainer.mp4)
+https://github.com/user-attachments/assets/325507a2-34d6-47fd-b161-ab86edef5215
 
-**▶ A 1m42s walkthrough — click the frame above.** The problem the assessment
-sets, then the five sections this system is built out of: structural isolation,
-the two-stage Router, the Agent Meeting, the Number Audit, and Replay Mode.
-Silent; everything is on screen.
+**A 1m42s walkthrough.** The problem the assessment sets, then the five sections
+this system is built out of: structural isolation, the two-stage Router, the
+Agent Meeting, the Number Audit, and Replay Mode. Silent; everything is on
+screen. The file also lives at
+[`docs/media/two-agents-explainer.mp4`](docs/media/two-agents-explainer.mp4).
 
 A command-line system that routes a business Question to the Specialist Agent
 that owns it — Finance or HR — or to an Agent Meeting when it crosses both
