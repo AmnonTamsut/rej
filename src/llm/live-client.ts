@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlock, JsonObject, LLMClient, LLMMessage, LLMRequest, LLMResponse } from "./client.js";
+import type { Usage } from "./pricing.js";
 
 /**
  * The live adapter: the only file in the system that imports the SDK.
@@ -11,7 +12,7 @@ import type { ContentBlock, JsonObject, LLMClient, LLMMessage, LLMRequest, LLMRe
 
 /**
  * Room enough for a Specialist Agent's answer. Escalation returns a single word
- * and costs a fraction of this; the cap exists so a runaway answer cannot.
+ * and costs a fraction of this; the ceiling exists so a runaway answer cannot.
  */
 export const MAX_TOKENS = 1024;
 
@@ -68,13 +69,26 @@ export const fromApiContent = (content: readonly Anthropic.ContentBlock[]): LLMR
   }),
 });
 
-/** Live Mode: the adapter that spends money. Built only where a key is in hand. */
-export const liveClient = (apiKey: string): LLMClient => {
+/**
+ * Live Mode: the adapter that spends money. Built only where a key is in hand.
+ *
+ * `onUsage` is how the record command knows what a recording pass cost. It is a
+ * side channel rather than a field on `LLMResponse` on purpose: what a call cost
+ * is a fact about Live Mode, and putting it on the seam would carry token counts
+ * into every Fixture and past every agent, neither of which has any use for
+ * them. Nothing above the seam is offered it.
+ */
+export const liveClient = (apiKey: string, onUsage?: (usage: Usage) => void): LLMClient => {
   const anthropic = new Anthropic({ apiKey });
 
   return {
     complete: async (request) => {
       const message = await anthropic.messages.create(toApiRequest(request));
+      onUsage?.({
+        inputTokens: message.usage.input_tokens,
+        outputTokens: message.usage.output_tokens,
+      });
+
       return fromApiContent(message.content);
     },
   };

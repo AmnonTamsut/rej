@@ -74,6 +74,28 @@ describe("the agent runtime", () => {
     expect(toolResults.map((r) => r.tool)).toEqual(["first", "second"]);
   });
 
+  it("audits the answer against the tool results of the same turn", async () => {
+    // Every answer arrives audited, so nothing downstream has to remember to
+    // ask: the Agent Meeting's contributions are audited by having been
+    // answered here, and the entry point only has to report what it is handed.
+    const agent = agentWith(tool("first", { value: 1 }));
+    const client = scriptedClient([asksFor("first"), says("The value is 1.")]);
+
+    const { audit } = await askAgent(agent, "What is the value?", client);
+
+    expect(audit.passed).toBe(true);
+  });
+
+  it("reports a figure the model produced that no tool result accounts for", async () => {
+    const agent = agentWith(tool("first", { value: 1 }));
+    const client = scriptedClient([asksFor("first"), says("The value is 7.")]);
+
+    const { audit } = await askAgent(agent, "What is the value?", client);
+
+    expect(audit.passed).toBe(false);
+    expect(audit.unaccounted).toEqual(["7"]);
+  });
+
   it("does not run a tool the agent does not hold, and says what it does hold", async () => {
     // The isolation guarantee at the point it would actually be breached: a
     // model naming another agent's tool is answered, not served.

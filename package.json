@@ -6,7 +6,9 @@
   "description": "Two Specialist Agents behind a deterministic Router",
   "scripts": {
     "ask": "tsx src/cli.ts",
+    "demo": "tsx src/demo.ts",
     "record": "tsx src/record.ts",
+    "survey": "tsx src/survey.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -1,9 +1,11 @@
 import { askQuestion } from "./ask.js";
-import { type CliResult, runAsCommand } from "./command.js";
+import { type CliResult, runAsCommand, unknownFlagResult, unknownFlags } from "./command.js";
+import { DEMO_QUESTIONS } from "./demo.js";
 import type { LLMClient } from "./llm/client.js";
 import { recordingClient } from "./llm/fixtures.js";
 import { liveClient } from "./llm/live-client.js";
 import { API_KEY_VARIABLE, environmentFrom } from "./llm/mode.js";
+import { addUsage, formatSpend, NO_USAGE, type Usage } from "./llm/pricing.js";
 import type { RouterVerdict } from "./router/router.js";
 
 /**
@@ -14,12 +16,18 @@ import type { RouterVerdict } from "./router/router.js";
  * makes, not something a run can drift into.
  */
 
+/** The flag that records the demo set: the one deliberate pass, named. */
+export const DEMO_FLAG = "--demo";
+
 const USAGE = [
-  'Usage: npm run record -- "<Question>" ["<Question>" ...]',
+  `Usage: npm run record -- ${DEMO_FLAG}`,
+  '       npm run record -- "<Question>" ["<Question>" ...]',
   "",
-  "Runs the given Questions in Live Mode and records every model call as a",
-  `Fixture, so Replay Mode can serve them afterwards. Needs ${API_KEY_VARIABLE}.`,
-  "This is the only command in the project that spends money.",
+  `${DEMO_FLAG} records the whole demo Question set in one pass, which is how the`,
+  "shipped Fixtures were made. Naming Questions instead records just those.",
+  "",
+  "Either way this is a Live Mode run: it calls the API, spends real budget, and",
+  `needs ${API_KEY_VARIABLE}. It is the only command in the project that spends money.`,
 ].join("\n");
 
 const NO_KEY = [
@@ -70,7 +78,14 @@ export const recordFixtures = async (
   return runs;
 };
 
-const summarize = (runs: readonly RecordedRun[], fixturesDir: string): string => {
+/**
+ * What the pass did and what it cost.
+ *
+ * The spend line is the point: recording is the only command that costs money,
+ * so it reports what it cost rather than leaving that to be guessed. The figure
+ * printed here is what `docs/recording-pass.md` records.
+ */
+const summarize = (runs: readonly RecordedRun[], fixturesDir: string, usage: Usage): string => {
   const calls = runs.reduce((total, run) => total + run.calls, 0);
   const paid = runs.filter((run) => run.calls > 0).length;
 
@@ -83,6 +98,7 @@ const summarize = (runs: readonly RecordedRun[], fixturesDir: string): string =>
     "",
     `${paid} of ${runs.length} Questions reached the model, for ${calls} calls in total; ` +
       `Fixtures are in ${fixturesDir}`,
+    `This pass used ${formatSpend(usage)}`,
   ].join("\n");
 };
 
@@ -90,21 +106,48 @@ export const runRecord = async (
   argv: readonly string[],
   env: Record<string, string | undefined>,
 ): Promise<CliResult> => {
-  const questions = argv.map((arg) => arg.trim()).filter((arg) => arg !== "");
+  const args = argv.map((arg) => arg.trim()).filter((arg) => arg !== "");
+  // A misspelt flag here would otherwise be recorded as a Question, which spends
+  // money to file a Fixture nobody will ever ask for.
+  const unknown = unknownFlags(args, [DEMO_FLAG]);
+  if (unknown.length > 0) return unknownFlagResult(unknown, USAGE);
+
+  const named = args.filter((arg) => !arg.startsWith("--"));
+  if (args.includes(DEMO_FLAG) && named.length > 0) {
+    // Recording the demo set and dropping the Questions beside it would be the
+    // same fault as the one above, one step over: the operator asked for two
+    // things, paid for one, and is told nothing about the other.
+    return {
+      exitCode: 1,
+      output: [
+        `${DEMO_FLAG} records the whole demo set, so it cannot be combined with a Question.`,
+        `Drop ${DEMO_FLAG} to record ${named.map((question) => `"${question}"`).join(", ")},`,
+        `or run ${DEMO_FLAG} on its own.`,
+        "",
+        USAGE,
+      ].join("\n"),
+      notice: null,
+    };
+  }
+
+  const questions = args.includes(DEMO_FLAG) ? DEMO_QUESTIONS.map((demo) => demo.question) : named;
   if (questions.length === 0) return { exitCode: 1, output: USAGE, notice: null };
 
   const environment = environmentFrom(env);
   if (environment.apiKey === undefined) return { exitCode: 1, output: NO_KEY, notice: null };
 
+  let usage = NO_USAGE;
   const runs = await recordFixtures(
     questions,
-    liveClient(environment.apiKey),
+    liveClient(environment.apiKey, (one) => {
+      usage = addUsage(usage, one);
+    }),
     environment.fixturesDir,
   );
 
   return {
     exitCode: 0,
-    output: summarize(runs, environment.fixturesDir),
+    output: summarize(runs, environment.fixturesDir, usage),
     notice: "Live Mode: this run called the API and spent real budget.",
   };
 };

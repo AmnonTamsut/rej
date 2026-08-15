@@ -4,7 +4,13 @@ import { describe, expect, it } from "vitest";
 import type { LLMRequest } from "./client.js";
 import { oneShot } from "./client.js";
 import { fixtureKey } from "./fixture-key.js";
-import { RECORD_COMMAND, recordingClient, replayClient } from "./fixtures.js";
+import {
+  LIVE_ASK_COMMAND,
+  RECORD_COMMAND,
+  RECORD_DEMO_COMMAND,
+  recordingClient,
+  replayClient,
+} from "./fixtures.js";
 import { scratchFixturesDir, standInClient } from "./testing.js";
 
 const REQUEST = oneShot("Place the Question.", "Should we hire more people?");
@@ -47,6 +53,36 @@ describe("Fixtures", () => {
     expect(message).toContain(RECORD_COMMAND);
   });
 
+  it("answers a miss with a runnable live command, before it offers recording", async () => {
+    // Someone who typed their own Question in Replay Mode wants an answer to it,
+    // and the way to get one is the flag. Leading with the record command sends
+    // them to spend on a recording pass to reach the same answer the flag would
+    // have got them, which is why the flag goes first and recording second.
+    //
+    // The assertion is on the whole command rather than on the flag, because a
+    // miss that merely mentions `--live` somewhere in its prose has not told
+    // anyone what to type, and the ordering check alone would pass on it.
+    const dir = scratchFixturesDir();
+
+    const message = await messageFrom(replayClient(dir).complete(REQUEST));
+
+    expect(message).toContain(LIVE_ASK_COMMAND);
+    expect(message.indexOf(LIVE_ASK_COMMAND)).toBeLessThan(message.indexOf(RECORD_COMMAND));
+  });
+
+  it("tells a miss to record the Question behind it, not the demo set instead of it", async () => {
+    // A miss is nearly always one Question's, and the demo pass records seven
+    // other Questions. Someone who follows an instruction to run `--demo` here
+    // spends money and hits the same miss again with nothing to explain it, so
+    // the Question form leads and the demo pass is offered second.
+    const dir = scratchFixturesDir();
+
+    const message = await messageFrom(replayClient(dir).complete(REQUEST));
+
+    expect(RECORD_COMMAND).toContain("<the Question>");
+    expect(message.indexOf(RECORD_COMMAND)).toBeLessThan(message.indexOf(RECORD_DEMO_COMMAND));
+  });
+
   it("stops serving a recording once the system prompt it was recorded against is edited", async () => {
     const dir = scratchFixturesDir();
     await recordInto(dir, REQUEST, "both");
@@ -86,6 +122,36 @@ describe("Fixtures", () => {
     writeFileSync(file, readFileSync(file, "utf8").replace(REQUEST.system, "Something else."));
 
     await expect(replayClient(dir).complete(REQUEST)).rejects.toThrow(/recorded, never written/i);
+  });
+
+  it("states the recorded-not-written rule in the file itself, first", async () => {
+    // The README says it and ADR 0001 says it; neither is open on the screen of
+    // someone about to change a number here until a test goes green. This is.
+    const dir = scratchFixturesDir();
+    await recordInto(dir, REQUEST, "both");
+
+    const file = readFileSync(soleFixtureFile(dir), "utf8");
+    const [firstLine, secondLine] = file.split("\n");
+
+    expect(firstLine).toBe("{");
+    expect(secondLine).toContain("never written or edited by hand");
+    // Read back through the parser rather than off the line, because the command
+    // it names carries quotes and the file carries them escaped.
+    expect(JSON.parse(file).note).toContain(RECORD_COMMAND);
+  });
+
+  it("keeps serving a Fixture whose note was removed, since a note is not an answer", async () => {
+    // The seal covers what the model said, not the commentary around it: a
+    // contributor who deletes the note has removed a comment, and calling that
+    // tampering would spend the integrity check's credibility on a false alarm.
+    const dir = scratchFixturesDir();
+    await recordInto(dir, REQUEST, "both");
+    const file = soleFixtureFile(dir);
+    const { note, ...withoutNote } = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify(withoutNote, null, 2));
+
+    expect(note).toContain("never written");
+    await expect(replayClient(dir).complete(REQUEST)).resolves.toBeDefined();
   });
 
   it("hands back what the client behind it answered while recording", async () => {

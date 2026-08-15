@@ -1,4 +1,5 @@
 import type { LLMClient } from "./client.js";
+import { LIVE_FLAG } from "./live-flag.js";
 import { DEFAULT_FIXTURES_DIR, replayClient } from "./fixtures.js";
 import { liveClient } from "./live-client.js";
 
@@ -6,11 +7,9 @@ import { liveClient } from "./live-client.js";
  * Which side of the seam a run is on, and how it got there.
  *
  * This is the only file that reads the environment for a key, so "what can make
- * this run spend money" is one file's worth of reading.
+ * this run spend money" is one file's worth of reading. The flag it is opted into
+ * with is named in `flags.js`, because a Fixture miss has to print it too.
  */
-
-/** The flag that opts into spending. */
-export const LIVE_FLAG = "--live";
 
 /** The environment variable holding the key, named once. */
 export const API_KEY_VARIABLE = "ANTHROPIC_API_KEY";

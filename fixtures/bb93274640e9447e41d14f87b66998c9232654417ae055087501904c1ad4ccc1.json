@@ -1,0 +1,130 @@
+{
+  "note": "Recorded from a real Claude API call. Fixtures are recorded, never written or edited by hand — see fixtures/README.md. To refresh this one, re-record: npm run record -- --demo",
+  "key": "bb93274640e9447e41d14f87b66998c9232654417ae055087501904c1ad4ccc1",
+  "recordedAt": "2026-08-14T21:08:20.594Z",
+  "request": {
+    "model": "claude-sonnet-5",
+    "system": "You are the Finance Agent for Cherry Host — the department the platform calls Noah.\nYou answer money Questions: revenue, expenses, cash position and runway, and what payroll\ncosts the company in total.\n\nYou read data only through the tools you have been given. They cover this company's own\nfinance records and nothing else. You cannot see:\n\n- what any individual earns. Your payroll tool reports a company-wide total and the number\n  of people it covers. There is no tool that breaks payroll down by person, team, or role,\n  and there is no way for you to obtain one.\n- anything about people as people: headcount by team, vacancies, attrition, performance,\n  who joined or left. That is the HR Agent's domain and its data is not yours to read.\n- anything outside this company's finances.\n\nIf a Question needs data you have no tool for, say so plainly and stop. Do not estimate, do\nnot extrapolate from what you can see, and do not answer from general knowledge. A stated\nrefusal is the right answer to a Question outside your domain — a plausible guess is not.\n\nWhen you do answer: call the tools you need first, then answer in a few sentences. Name the\nperiod and the currency. Every figure in your answer must come from a tool result in this\nconversation — never round, rescale, or infer a number that a tool did not return.",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "How much cash is left in the bank?"
+          }
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_01ErFUYwQFz15YqL7rGp75Re",
+            "name": "finance_cash_position",
+            "input": {}
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "tool_result",
+            "toolUseId": "toolu_01ErFUYwQFz15YqL7rGp75Re",
+            "content": "{\"asOf\":\"2025-09-30\",\"balance\":1248000,\"monthlyBurn\":96000,\"runwayMonths\":13,\"currency\":\"USD\"}"
+          }
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "name": "finance_revenue",
+        "description": "Revenue for a quarter or the year to date, split into recurring revenue and services revenue.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "enum": [
+                "Q1",
+                "Q2",
+                "Q3",
+                "year to date"
+              ],
+              "description": "Which period to report revenue for."
+            }
+          },
+          "required": [
+            "period"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "finance_expenses",
+        "description": "Company expenses for a quarter or the year to date: the total, and the breakdown by expense line (payroll, hosting, marketing, software, office, other).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "enum": [
+                "Q1",
+                "Q2",
+                "Q3",
+                "year to date"
+              ],
+              "description": "Which period to report expenses for."
+            }
+          },
+          "required": [
+            "period"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "finance_cash_position",
+        "description": "The current cash position: bank balance, monthly net burn, and the runway in months that follows from them, as of the date on the result.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "finance_payroll_cost",
+        "description": "What payroll costs the company in a period: the company-wide total cost, the employer contributions within it, and how many people that total covers. This is the only view of payroll available anywhere in finance — there is no breakdown by person, team, or role, and no tool that reports what any individual earns.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "enum": [
+                "Q1",
+                "Q2",
+                "Q3",
+                "year to date"
+              ],
+              "description": "Which period to report payroll cost for."
+            }
+          },
+          "required": [
+            "period"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ]
+  },
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "As of September 30, 2025, Cherry Host has **$1,248,000** in the bank. With a monthly net burn of $96,000, that gives a runway of approximately **13 months** at the current rate."
+      }
+    ]
+  },
+  "integrity": "26cd305543fd68f28cda0b7fc6fd6bd994c46b381eaea00c69a902e071fa89c2"
+}

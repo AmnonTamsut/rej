@@ -29,6 +29,19 @@ const CASES: readonly Case[] = [
   { question: "What does our head of engineering get paid?", expected: "hr", because: "an individual salary is hr, never finance" },
   { question: "Is anyone quitting more than usual?", expected: "hr", because: "attrition phrased loosely" },
 
+  // hr — people Questions that name the person rather than the role
+  { question: "What does Priya Raman earn?", expected: "hr", because: "a name in place of a role is still a salary Question" },
+  { question: "How much does Yuki Tanaka get paid?", expected: "hr", because: "the same Question with a different verb" },
+  { question: "What does Nils Andersen make?", expected: "hr", because: "'make' reads as money, and must still land on the person's domain" },
+  { question: "How long has Zoe Hart worked here?", expected: "hr", because: "a named individual's tenure" },
+  { question: "Which team is Clara Bennett on?", expected: "hr", because: "a named individual's team" },
+  { question: "What is Amara Okafor's job title?", expected: "hr", because: "a named individual's role" },
+  { question: "Is Mei Lin a contractor?", expected: "hr", because: "one person's employment type, not the contractor-versus-permanent cost Question" },
+
+  // hr — pay Questions that name nobody at all
+  { question: "Who is our highest paid employee?", expected: "hr", because: "a salary Question the finance bank reads as a cost Question" },
+  { question: "Who is our most expensive person?", expected: "hr", because: "expensive sounds like finance, but only the HR Agent can see a person's pay" },
+
   // both — cross-cutting Questions
   { question: "Should we hire more people?", expected: "both", because: "the canonical cross-cutting Question" },
   { question: "Can we afford to bring on three more engineers?", expected: "both", because: "a hiring Question that is also a cash Question" },
@@ -36,7 +49,7 @@ const CASES: readonly Case[] = [
   {
     question: "What are we paying the engineering team in total?",
     expected: "both",
-    // finance ~0.71, hr ~0.68: neither bank wins outright, so the margin decides.
+    // finance 0.697, hr 0.685: neither bank wins outright, so the margin decides.
     because: "near the top-two margin — finance and hr are within it, so the Route is both",
   },
 
@@ -47,7 +60,7 @@ const CASES: readonly Case[] = [
   {
     question: "What time does the office open?",
     expected: "abstention",
-    // ~0.35 against its best bank, just under the 0.4 floor.
+    // 0.340 against its best bank, just under the 0.4 floor.
     because: "near the score floor from below — sounds like an internal Question but neither domain owns it",
   },
 
@@ -55,13 +68,13 @@ const CASES: readonly Case[] = [
   {
     question: "How many roles are we trying to fill?",
     expected: "hr",
-    // top-two gap ~0.07, just wider than the margin.
+    // top-two gap 0.068, just wider than the margin.
     because: "near the top-two margin from above — vacancies stay hr rather than collapsing to both",
   },
   {
     question: "How much of our monthly spend goes on salaries for the sales team?",
     expected: "finance",
-    // top-two gap ~0.07, just wider than the margin.
+    // top-two gap 0.062, just wider than the margin.
     because: "near the top-two margin from above — aggregate spend stays finance",
   },
 ];

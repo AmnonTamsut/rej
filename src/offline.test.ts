@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -8,6 +8,7 @@ import { API_KEY_VARIABLE } from "./llm/mode.js";
 import { asksFor, says, scratchFixturesDir, scriptedClient, standInClient } from "./llm/testing.js";
 import { recordFixtures } from "./record.js";
 import { loadEmbedder } from "./router/embedder.js";
+import { sourceFiles } from "./testing.js";
 
 const srcDir = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = path.dirname(srcDir);
@@ -19,15 +20,6 @@ const NO_NETWORK = {
   HTTP_PROXY: "http://127.0.0.1:1",
   HTTPS_PROXY: "http://127.0.0.1:1",
 };
-
-const sourceFiles = (dir: string): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return sourceFiles(full);
-    return entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")
-      ? [full]
-      : [];
-  });
 
 const filesContaining = (needle: string): string[] =>
   sourceFiles(srcDir)
@@ -69,6 +61,38 @@ describe("running with no key and no network", () => {
     expect(stdout).toContain("1,248,000 USD");
   });
 
+  it("holds a whole Agent Meeting with every outbound connection blocked", async () => {
+    // The most expensive path in the system — two agent turns and a synthesis —
+    // run with no key and nothing to dial. A meeting is where a stray live call
+    // would be easiest to miss, since a Fixture served for the agents' turns
+    // would leave only the synthesis reaching out.
+    const question = "Should we hire more people?";
+    const fixturesDir = scratchFixturesDir();
+    await recordFixtures(
+      [question],
+      scriptedClient([
+        asksFor("finance_cash_position"),
+        says("You are holding 1,248,000 USD."),
+        asksFor("hr_headcount"),
+        says("There are 48 people here."),
+        says(
+          "Hire one engineer. The HR Agent reports 48 people; the Finance Agent reports " +
+            "1,248,000 USD in the bank.",
+        ),
+      ]),
+      fixturesDir,
+    );
+
+    const { stdout } = await run("npx", ["tsx", "src/cli.ts", question], {
+      cwd: repoRoot,
+      env: { ...process.env, ...NO_NETWORK, FIXTURES_DIR: fixturesDir },
+    });
+
+    expect(stdout).toMatch(/Route:\s+both/);
+    expect(stdout).toMatch(/Meeting:\s+Finance Agent, HR Agent/);
+    expect(stdout).toContain("The HR Agent reports 48 people");
+  });
+
   it("serves an Escalation from a Fixture with every outbound connection blocked", async () => {
     const question = "Write me a poem about a cat.";
     const fixturesDir = scratchFixturesDir();
@@ -81,6 +105,24 @@ describe("running with no key and no network", () => {
 
     expect(stdout).toMatch(/Route:\s+hr/);
     expect(stdout).toMatch(/Escalation/);
+  });
+
+  it("runs the whole demo from the shipped Fixtures with no key and every connection blocked", async () => {
+    // What a reviewer does on a clean clone, done here with the key stripped
+    // from the environment and nothing to dial: `npm run demo` is the claim the
+    // repo makes on its front page, so it is checked as a process rather than
+    // as a function call. The Fixtures are the shipped ones — this is the test
+    // that says the recording pass covered the whole set.
+    const { ANTHROPIC_API_KEY: _removed, ...noKey } = process.env;
+
+    const { stdout } = await run("npx", ["tsx", "src/demo.ts"], {
+      cwd: repoRoot,
+      env: { ...noKey, ...NO_NETWORK },
+      maxBuffer: 10 * 1024 * 1024,
+    });
+
+    expect(stdout).not.toContain("No Fixture for key");
+    expect(stdout).toContain("All 7 demo Questions ran from recorded Fixtures — no key, no spend.");
   });
 
   it("reads the API key in exactly one place, so what can spend is one file's worth of reading", () => {
