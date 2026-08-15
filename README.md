@@ -1,11 +1,11 @@
 # Two Specialist Agents behind a deterministic Router
 
-Business Questions arrive in one inbox and belong to two domains that must not
-mix. "What did we spend on payroll?" is a money Question; "what does Priya
-Raman earn?" is a people Question; and whoever can answer the first must not be
-able to answer the second. One agent with access to everything would answer both
-and quietly destroy that boundary. Two agents with a human deciding which one to
-ask is not a system.
+A command-line system that routes a business Question to the Specialist Agent
+that owns it — Finance or HR — or to an Agent Meeting when it crosses both
+domains. "What did we spend on payroll?" is a money Question; "what does Priya
+Raman earn?" is a people Question, and whoever can answer the first must not be
+able to answer the second. One agent with access to everything would answer
+both, so each agent holds only its own Scoped Tools over its own Dataset.
 
 ```mermaid
 flowchart TD
@@ -27,13 +27,8 @@ flowchart TD
     M -.-> HT
 ```
 
-Read that picture for what is missing: no edge from one agent into the other's
-Scoped Tools, no shared Dataset beneath them, nothing that widens during an Agent
-Meeting. That absence *is* the isolation guarantee — wiring, not a filter that has
-to be got right at runtime. Every figure in every answer is checked by the
-**Number Audit** against the tool results behind it, and the whole thing runs with
-no API key and no spend, because **Replay Mode** is the default and serves
-**Fixtures** recorded from real **Live Mode** calls.
+**Replay Mode** is the default, so the whole system runs with no API key and no
+spend, serving **Fixtures** recorded from real **Live Mode** calls.
 
 ```
 Question: How much cash is left in the bank?
@@ -46,7 +41,7 @@ As of September 30, 2025, Cherry Host has **$1,248,000** in the bank. With a mon
 …
 ```
 
-## Running it, with no key and no spend
+## Running it
 
 ```bash
 npm install
@@ -74,7 +69,7 @@ live API and inventing an answer are the two ways a replay layer stops being
 evidence of anything (`fixtures/README.md`, ADR 0001). The tests run on this same
 path, so the suite is free and offline too: `npm test` and `npm run typecheck`.
 
-## Live Mode, and what it costs
+## Live Mode
 
 Live Mode takes two things — the `--live` flag and an `ANTHROPIC_API_KEY` in the
 environment. Neither half alone gets there, which is what stops a test run or a
@@ -98,14 +93,14 @@ an ordinary run cannot drift into it:
 ANTHROPIC_API_KEY=sk-... npm run record -- --demo
 ```
 
-## The architecture, and why
+## Architecture
 
 Three decisions carry this system. The rest — the `LLMClient` seam, the Fixture
 keying, the Agent Meeting — are in the repository map with the ADR that argues
 each. The general case behind all of them, at eight agents rather than two, is in
 [`docs/written-answers.md`](docs/written-answers.md).
 
-### The Router, in two stages
+### The Router
 
 The Router maps a Question to a Route without answering it. Asking a model costs
 a round-trip on every Question and gives a non-deterministic answer to a decision
@@ -131,7 +126,7 @@ a threshold — never by editing Router logic;
 [`docs/exemplar-bank-coverage.md`](docs/exemplar-bank-coverage.md) records what
 the Banks cover, what they deliberately do not, and what each decision cost.
 
-### Isolation by Scoped Tools, not by filtering
+### Isolation
 
 Each Specialist Agent owns a Dataset and is handed only its own Scoped Tools. The
 Finance Agent cannot reach an individual salary because the HR Agent holds the
@@ -167,7 +162,7 @@ purpose: the recorded Agent Meeting states an operating loss and a payroll
 percentage no Scoped Tool returned, and re-recording until a clean sample came
 back would demonstrate the prompt instead of the check.
 
-## What a run tells you
+## Run output
 
 Every run reports the Route, the stage that decided it, who answered, the answer,
 the Number Audit's verdict, and the per-bank scores. Here is a Question the
@@ -244,7 +239,7 @@ Then one line in `AGENT_FOR` in `src/ask.ts`, and a recording pass. One thing a
 third agent forces open first: `both` names a pair, and with three domains it no
 longer does.
 
-## Next steps, deliberately not built
+## Next steps
 
 - **Caching Escalation verdicts.** Worth doing if Escalation becomes common;
   today the cheaper fix is widening a Bank.
