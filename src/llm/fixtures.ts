@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { JsonValue, LLMClient, LLMRequest, LLMResponse } from "./client.js";
 import { canonicalJson, fixtureKey, sha256 } from "./fixture-key.js";
+import { LIVE_FLAG } from "./flags.js";
 
 /**
  * How a contributor gets a Fixture: by recording it, never by writing it.
@@ -13,6 +14,16 @@ import { canonicalJson, fixtureKey, sha256 } from "./fixture-key.js";
  * Questions and hit the same miss again with nothing to explain it.
  */
 export const RECORD_COMMAND = 'npm run record -- "<the Question>"';
+
+/**
+ * How someone who typed their own Question gets an answer to it.
+ *
+ * This is the first thing a miss offers, because it is what the person hitting
+ * the miss almost always wants. Recording is the other way to reach the same
+ * answer, and it spends on a stored copy nobody asked for — so it is offered
+ * second, to the narrower case of someone who wants the Question replayable.
+ */
+export const LIVE_ASK_COMMAND = `npm run ask -- ${LIVE_FLAG} "<the Question>"`;
 
 /** The whole demo set in one pass — how the recordings in `fixtures/` were made. */
 export const RECORD_DEMO_COMMAND = "npm run record -- --demo";
@@ -77,7 +88,9 @@ const missMessage = (key: string, file: string): string =>
     `Replay Mode serves recordings only — it never falls through to the API and`,
     `never invents an answer. Expected: ${file}`,
     "",
-    `Record it with:  ${RECORD_COMMAND}`,
+    `Ask it live:  ${LIVE_ASK_COMMAND}`,
+    "",
+    `Or record it, to have it served here from now on:  ${RECORD_COMMAND}`,
     `Or re-record the whole demo set:  ${RECORD_DEMO_COMMAND}`,
     "",
     "A Fixture is keyed by the whole request, so editing a system prompt or a",

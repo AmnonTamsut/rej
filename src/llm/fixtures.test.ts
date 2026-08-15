@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { LLMRequest } from "./client.js";
 import { oneShot } from "./client.js";
 import { fixtureKey } from "./fixture-key.js";
+import { LIVE_FLAG } from "./flags.js";
 import {
   RECORD_COMMAND,
   RECORD_DEMO_COMMAND,
@@ -50,6 +51,19 @@ describe("Fixtures", () => {
 
     expect(message).toContain(fixtureKey(REQUEST));
     expect(message).toContain(RECORD_COMMAND);
+  });
+
+  it("offers a miss the live flag before it offers recording, which spends", async () => {
+    // Someone who typed their own Question in Replay Mode wants an answer to it,
+    // and the way to get one is the flag. Leading with the record command sends
+    // them to spend on a recording pass to reach the same answer the flag would
+    // have got them, which is why the flag goes first and recording second.
+    const dir = scratchFixturesDir();
+
+    const message = await messageFrom(replayClient(dir).complete(REQUEST));
+
+    expect(message).toContain(LIVE_FLAG);
+    expect(message.indexOf(LIVE_FLAG)).toBeLessThan(message.indexOf(RECORD_COMMAND));
   });
 
   it("tells a miss to record the Question behind it, not the demo set instead of it", async () => {

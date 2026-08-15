@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "./cli.js";
 import { DEMO_QUESTIONS } from "./demo.js";
-import { API_KEY_VARIABLE, LIVE_FLAG } from "./llm/mode.js";
-import { BUDGET_CAP_USD } from "./llm/pricing.js";
+import { LIVE_FLAG } from "./llm/flags.js";
+import { API_KEY_VARIABLE } from "./llm/mode.js";
 import { EMBEDDING_MODEL_DOWNLOAD_MB, loadEmbedder } from "./router/embedder.js";
 import { abstentionsIn, survey } from "./survey.js";
 
@@ -154,17 +154,16 @@ describe("the README's run instructions", () => {
     expect(referenced.filter((file) => !existsSync(path.join(repoRoot, file)))).toEqual([]);
   });
 
-  it("says Live Mode needs both the flag and the key, and what a run costs", () => {
+  it("names both things a Live Mode run needs", () => {
+    // What it costs is deliberately not asserted, and deliberately not stated.
+    // The cap and the recording bill are this project's constraints, not a
+    // reader's: someone running this brings their own key, and the figures they
+    // would want are per-Question ones nobody has measured. `docs/recording-pass.md`
+    // owns what was actually spent, and the repository map points at it.
     const text = readme();
 
     expect(text).toContain(LIVE_FLAG);
     expect(text).toContain(API_KEY_VARIABLE);
-    expect(text).toContain(`$${BUDGET_CAP_USD}`);
-    // The recorded pass's own figure, quoted from the document that owns it, so
-    // the two cannot drift into disagreeing about what the demo set cost.
-    const recordingPass = readFileSync(path.join(repoRoot, "docs/recording-pass.md"), "utf8");
-    expect(recordingPass).toContain("$0.1172");
-    expect(text).toContain("$0.1172");
   });
 
   it("explains the first-run model download, at the size the embedder reports", () => {

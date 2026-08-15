@@ -43,55 +43,48 @@ As of September 30, 2025, Cherry Host has **$1,248,000** in the bank. With a mon
 
 ## Running it
 
+### 1. Install
+
 ```bash
 npm install
-npm run demo
 ```
 
 **The first run downloads about 25MB.** The Local Pass uses a local embedding
 model (`Xenova/all-MiniLM-L6-v2`, quantized), fetched once into `.model-cache/`
-and reused from disk. It is announced on stderr while it happens, and it is the
-only network access any default run makes.
+and reused from disk. It is announced on stderr while it happens.
 
-`npm run demo` runs the seven demo Questions through the same entry point you
-would use yourself. Between them they cover all four Routes, both Router stages,
-an out-of-domain refusal, an Agent Meeting, and a Number Audit failure —
-`src/demo.ts` says what each Question is there to show. Ask one at a time with:
+### 2. Ask it a Question of your own
 
 ```bash
-npm run ask -- "What does Priya Raman earn?"
+export ANTHROPIC_API_KEY=sk-...
+npm run ask -- --live "How much cash is left in the bank?"
 ```
 
-In Replay Mode the answerable Questions are the recorded ones, which is the demo
-set; anything else stops with a Fixture miss naming the record command. A miss is
-a hard error rather than a quiet call to the API, because falling through to the
-live API and inventing an answer are the two ways a replay layer stops being
-evidence of anything (`fixtures/README.md`, ADR 0001). The tests run on this same
-path, so the suite is free and offline too: `npm test` and `npm run typecheck`.
+**Prints the Route, the Router stage that decided it, the answering agent, the
+answer, and the Number Audit's verdict, then the per-bank scores behind the
+Route.** Any Question works here, including one the Exemplar Banks have never
+seen — that is what the `--live` flag buys, and without it the run answers only
+the recorded Questions below.
 
-## Live Mode
-
-Live Mode takes two things — the `--live` flag and an `ANTHROPIC_API_KEY` in the
-environment. Neither half alone gets there, which is what stops a test run or a
-casual invocation from spending:
+### 3. Watch it handle the whole demo set
 
 ```bash
-ANTHROPIC_API_KEY=sk-... npm run ask -- --live "How much cash is left in the bank?"
+npm run demo
 ```
 
-The flag without a key stops the run and says so. A key in the environment of
-someone who did not pass the flag arms nothing, and the run says that on stderr
-rather than failing.
+**Answers the seven demo Questions with no key and no spend.** Between them they
+cover all four Routes, both Router stages, an out-of-domain refusal, an Agent
+Meeting, and a Number Audit failure; `src/demo.ts` says what each Question is
+there to show.
 
-The project runs under a hard **$5** cap on a personal account. Recording the
-whole demo set was 16 calls and cost **$0.1172**, about 2.3% of it;
-`docs/recording-pass.md` carries the bill, including the first pass that was
-discarded. Recording is the only sanctioned spend and is a separate command, so
-an ordinary run cannot drift into it:
+### 4. Run the suite
 
 ```bash
-ANTHROPIC_API_KEY=sk-... npm run record -- --demo
+npm test
+npm run typecheck
 ```
+
+**Both run offline and without a key**, on the same path `npm run demo` uses.
 
 ## Architecture
 
