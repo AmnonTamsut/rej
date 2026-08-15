@@ -4,44 +4,37 @@
 ## 1 — Agent Isolation
 
 A system prompt is not a security boundary. "You are Noah, you only see finance
-tables" is a request to a model, and a request is the wrong mechanism for a
-guarantee that has to hold on the run where the model is confused, jailbroken, or
-simply wrong. So I would enforce isolation in three layers, and treat only the
-last as load-bearing.
+tables" is a request to a model, and it fails on the run where the model is
+confused or jailbroken. Three layers, only the last load-bearing.
 
-1. **The prompt shapes behaviour.** It names the agent's domain, names what it
-   cannot see, and tells it to decline rather than speculate — that last clause
-   turns a misroute into a visible refusal instead of an invented answer.
-2. **The tool layer bounds capability.** Each agent is constructed with its own
-   array of Scoped Tools, and there is no registry to look another agent's tool
-   up in, so an agent cannot request data it holds no tool for. Where a figure
-   genuinely must cross, the tool returns an aggregate shape and only that shape,
-   so there is no filtered version of it to get wrong.
-   In this repo: `src/agents/finance/tools.ts`, `src/agents/hr/tools.ts`, and
-   `src/agents/isolation.test.ts`, which asserts the two arrays share no tool
-   instance and no tool name.
-3. **The database layer bounds authority.** Each agent's tools execute under
-   their own Postgres role with row-level security, so Noah's connection cannot
-   read HR tables even if the tool wiring is one day got wrong. This is not the
-   filtered shared access rejected below; the difference is who enforces it.
-   Filter logic I wrote fails open and silently, a role the database refuses
-   fails closed and loudly. That is why this is the layer I would not ship
-   without — the two above it are code I wrote, and the point is to survive my
-   own mistakes.
+1. **Prompt — what the agent should do.** Names its domain and tells it to
+   decline rather than speculate, so a misroute surfaces as a refusal instead of
+   an invented answer. Shapes behaviour; guarantees nothing.
+2. **Tools — what the agent can do.** Each agent holds its own array of Scoped
+   Tools and there is no registry to find another's, so it cannot request data it
+   has no tool for. Figures that must cross exist only in aggregate shape, so
+   there is no filtered version to get wrong. (`src/agents/finance/tools.ts`,
+   `src/agents/hr/tools.ts`, `src/agents/isolation.test.ts`.)
+3. **Database — what the agent may do.** Tools run under a per-agent Postgres
+   role with row-level security. Not the shared filtering rejected below: my
+   filter code fails open and silent, a role the database refuses fails closed
+   and loud. The layer I would not ship without, because the two above it are
+   code I wrote.
 
-The alternative is one shared data layer with a caller identity and per-request
-filtering in application code. It is less code and it centralises the rules, but
-it makes isolation depend on that filter being correct on every path — a class of
-bug that is invisible until it leaks. Structural isolation instead costs
-duplication across eight agents and gives up cross-department joins by design,
-which is the right trade here: cross-domain work goes through the Agent Meeting
-(question 2) rather than through a wider query.
+Routing stays outside the boundary and reads no Dataset: the Local Pass compares
+the Question against Exemplar Banks as vectors on the machine, and Escalation
+sends the LLM classifier the Question text alone. So a misroute is a wrong
+answer, never a leak — the wrong agent still holds only its own tools, and
+routing accuracy is never a security control.
 
-All three layers bound what an agent can read. The same boundary reappears in
-other media — conversation history, logs and traces, and whatever one agent
-publishes to another. The last of those is what question 2's two-phase design is
-for; the first two I would hold to the same per-agent rule rather than leave to
-be noticed later.
+Rejected: one shared data layer with a caller identity and per-request filtering.
+Less code, but isolation then depends on that filter being right on every path —
+a bug invisible until it leaks. Structural isolation instead costs duplication
+across eight agents and cross-department joins, which go through the Agent
+Meeting (question 2).
+
+These layers bound reads. Conversation history, logs, and what one agent
+publishes to another are the same boundary in another medium.
 
 ## 2 — The AI Agent Meeting
 
