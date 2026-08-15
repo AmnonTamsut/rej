@@ -1,0 +1,1219 @@
+<title>Two Agents, One Inbox</title>
+<style>
+  /* ---------------------------------------------------------------
+     Tokens. Light is the bare :root. Two accents that never mix —
+     brass for the money lane, indigo for the people lane — because
+     the thing this system guarantees is that they don't.
+     --------------------------------------------------------------- */
+  :root {
+    --ground:     #EFEEF2;
+    --panel:      #FBFAFD;
+    --panel-2:    #E7E5EC;
+    --ink:        #1A1922;
+    --ink-soft:   #55535F;
+    --ink-faint:  #8A8794;
+    --rule:       #D9D7E1;
+    --rule-firm:  #BEBBC9;
+
+    --fin:        #8E5518;
+    --fin-wash:   #F4E8D9;
+    --fin-edge:   #D8B98F;
+
+    --hr:         #413FA4;
+    --hr-wash:    #E4E3F6;
+    --hr-edge:    #B3B1E4;
+
+    --neutral-acc:    #4A4757;
+    --neutral-wash:   #E3E1E9;
+
+    --warn:       #9E2F24;
+    --warn-wash:  #F7E3E0;
+    --good:       #2C6349;
+
+    --shadow: 0 1px 2px rgba(26,25,34,.07), 0 12px 34px -18px rgba(26,25,34,.28);
+
+    --serif: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:     #131218;
+      --panel:      #1B1A23;
+      --panel-2:    #232130;
+      --ink:        #EDEBF3;
+      --ink-soft:   #A8A4B4;
+      --ink-faint:  #726E80;
+      --rule:       #2F2D3A;
+      --rule-firm:  #423F51;
+
+      --fin:        #E4A768;
+      --fin-wash:   #2A2018;
+      --fin-edge:   #6B5233;
+
+      --hr:         #A09EF2;
+      --hr-wash:    #1E1D34;
+      --hr-edge:    #43418A;
+
+      --neutral-acc:  #B9B5C6;
+      --neutral-wash: #24222E;
+
+      --warn:       #EE8878;
+      --warn-wash:  #2E1B18;
+      --good:       #74C9A0;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 40px -20px rgba(0,0,0,.8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:     #131218;
+    --panel:      #1B1A23;
+    --panel-2:    #232130;
+    --ink:        #EDEBF3;
+    --ink-soft:   #A8A4B4;
+    --ink-faint:  #726E80;
+    --rule:       #2F2D3A;
+    --rule-firm:  #423F51;
+
+    --fin:        #E4A768;
+    --fin-wash:   #2A2018;
+    --fin-edge:   #6B5233;
+
+    --hr:         #A09EF2;
+    --hr-wash:    #1E1D34;
+    --hr-edge:    #43418A;
+
+    --neutral-acc:  #B9B5C6;
+    --neutral-wash: #24222E;
+
+    --warn:       #EE8878;
+    --warn-wash:  #2E1B18;
+    --good:       #74C9A0;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 40px -20px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(18px, 3vw, 40px) clamp(14px, 3vw, 32px) 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* ---------------- masthead ---------------- */
+
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 12px;
+  }
+  .masthead h1 {
+    margin: 0;
+    font-size: clamp(15px, 1.5vw, 18px);
+    font-weight: 600;
+    letter-spacing: .01em;
+  }
+  .masthead .sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ---------------- the stage ---------------- */
+
+  .stage {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 860px) {
+    .stage { aspect-ratio: 16 / 9.6; }
+  }
+  @media (max-width: 859px) {
+    .stage { min-height: 68vh; }
+  }
+
+  .slate {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px clamp(16px, 3vw, 34px);
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel-2);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    flex: none;
+  }
+  .slate .act { color: var(--ink-soft); }
+  .slate .count { font-variant-numeric: tabular-nums; }
+
+  .frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: clamp(18px, 2.6vw, 34px) clamp(18px, 4vw, 58px) clamp(18px, 2.4vw, 30px);
+  }
+
+  .rail {
+    flex: none;
+    height: 2px;
+    background: var(--rule);
+    position: relative;
+  }
+  .rail .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    background: var(--neutral-acc);
+  }
+
+  /* ---------------- frame content blocks ---------------- */
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+  .eyebrow.fin { color: var(--fin); }
+  .eyebrow.hr  { color: var(--hr); }
+
+  .claim {
+    font-size: clamp(22px, 3.05vw, 36px);
+    line-height: 1.16;
+    font-weight: 600;
+    letter-spacing: -.015em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+    max-width: 22ch;
+  }
+  .claim.wide { max-width: 30ch; }
+
+  .lede {
+    font-size: clamp(15px, 1.4vw, 18px);
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 14px;
+  }
+  .lede strong { color: var(--ink); font-weight: 600; }
+
+  .note {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-faint);
+    max-width: 78ch;
+    margin: 14px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .cols {
+    display: grid;
+    gap: clamp(14px, 2vw, 26px);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 760px) {
+    .cols.two   { grid-template-columns: 1fr 1fr; }
+    .cols.three { grid-template-columns: repeat(3, 1fr); }
+    .cols.aside { grid-template-columns: 1.1fr .9fr; }
+  }
+
+  /* cards */
+  .card {
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: var(--panel);
+    padding: 16px 18px;
+  }
+  .card h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+  }
+  .card p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+  .card p + p { margin-top: 8px; }
+
+  .card.fin { border-color: var(--fin-edge); background: var(--fin-wash); }
+  .card.fin h3 { color: var(--fin); }
+  .card.hr  { border-color: var(--hr-edge);  background: var(--hr-wash); }
+  .card.hr h3 { color: var(--hr); }
+  .card.bad { border-color: var(--warn); background: var(--warn-wash); }
+  .card.bad h3 { color: var(--warn); }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 7px;
+  }
+  .card.fin .tag { color: var(--fin); }
+  .card.hr  .tag { color: var(--hr); }
+  .card.bad .tag { color: var(--warn); }
+
+  /* enumerated steps — used only where order is real */
+  ol.steps {
+    list-style: none;
+    counter-reset: s;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  ol.steps li {
+    counter-increment: s;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  ol.steps li::before {
+    content: counter(s, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    padding-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  ol.steps h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  ol.steps p  { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 62ch; }
+
+  ul.plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  ul.plain li {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    padding-left: 18px;
+    position: relative;
+    max-width: 64ch;
+  }
+  ul.plain li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: .68em;
+    width: 8px; height: 1px;
+    background: var(--rule-firm);
+  }
+  ul.plain li strong { color: var(--ink); font-weight: 600; }
+
+  /* comparison table */
+  .tablewrap { overflow-x: auto; }
+  table.cmp {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 560px;
+    font-size: 14px;
+  }
+  table.cmp th, table.cmp td {
+    text-align: left;
+    vertical-align: top;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  table.cmp thead th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--rule-firm);
+    font-weight: 400;
+  }
+  table.cmp tbody th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  table.cmp td { color: var(--ink-soft); }
+  table.cmp td.free { color: var(--ink); }
+  table.cmp td code, .lede code, ul.plain code, .card p code, ol.steps p code {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: var(--neutral-wash);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  /* terminal */
+  .term {
+    font-family: var(--mono);
+    font-size: clamp(10.5px, .93vw, 12.5px);
+    line-height: 1.58;
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    color: var(--ink-soft);
+    margin: 0;
+    tab-size: 2;
+  }
+  .term .q    { color: var(--ink); font-weight: 600; }
+  .term .rf   { color: var(--fin); }
+  .term .rh   { color: var(--hr); }
+  .term .rb   { color: var(--neutral-acc); }
+  .term .ok   { color: var(--good); }
+  .term .bad  { color: var(--warn); }
+  .term .dim  { color: var(--ink-faint); }
+  .term b     { color: var(--ink); font-weight: 600; }
+
+  /* score bars */
+  .scores { display: flex; flex-direction: column; gap: 7px; margin: 0; }
+  .score {
+    display: grid;
+    grid-template-columns: 62px 1fr 46px;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .score .bar { height: 7px; background: var(--neutral-wash); border-radius: 1px; overflow: hidden; }
+  .score .bar i { display: block; height: 100%; background: var(--rule-firm); }
+  .score.fin .bar i { background: var(--fin); }
+  .score.fin  > span:first-child { color: var(--fin); }
+  .score.hr  .bar i { background: var(--hr); }
+  .score.hr   > span:first-child { color: var(--hr); }
+  .score .val { text-align: right; font-variant-numeric: tabular-nums; }
+  .floor {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin: 9px 0 0;
+  }
+
+  /* diagram */
+  .figure { width: 100%; overflow-x: auto; }
+  .figure svg {
+    display: block;
+    width: 100%;
+    min-width: 620px;
+    height: auto;
+    max-height: min(50vh, 430px);
+  }
+  svg .box   { fill: var(--panel); stroke: var(--rule-firm); stroke-width: 1; }
+  svg .box-n { fill: var(--neutral-wash); stroke: var(--rule-firm); }
+  svg .box-f { fill: var(--fin-wash); stroke: var(--fin-edge); }
+  svg .box-h { fill: var(--hr-wash);  stroke: var(--hr-edge); }
+  svg .lbl   { font-family: var(--mono); font-size: 12px; fill: var(--ink); }
+  svg .lbl-s { font-family: var(--mono); font-size: 10px; fill: var(--ink-faint); }
+  svg .lbl-f { fill: var(--fin); }
+  svg .lbl-h { fill: var(--hr); }
+  svg .wire  { stroke: var(--rule-firm); stroke-width: 1.2; fill: none; }
+  svg .wire-d { stroke: var(--rule-firm); stroke-width: 1.2; fill: none; stroke-dasharray: 3 3; }
+  svg .divider { stroke: var(--rule-firm); stroke-width: 1; stroke-dasharray: 2 4; }
+
+  /* ---------------- transport ---------------- */
+
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--panel);
+    border: 1px solid var(--rule-firm);
+    border-radius: 2px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--panel-2); color: var(--ink); }
+  .btn:focus-visible { outline: 2px solid var(--neutral-acc); outline-offset: 2px; }
+  .btn.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); min-width: 92px; }
+  .btn.primary:hover { background: var(--ink-soft); border-color: var(--ink-soft); color: var(--ground); }
+
+  .chapters {
+    display: flex;
+    gap: 18px;
+    flex: 1 1 320px;
+    flex-wrap: wrap;
+  }
+  .chapter { flex: 1 1 140px; min-width: 130px; }
+  .chapter .name {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .chapter .ticks { display: flex; gap: 3px; }
+  .chapter .ticks button {
+    flex: 1;
+    height: 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+  }
+  .chapter .ticks button::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 5px;
+    height: 2px;
+    background: var(--rule-firm);
+    transition: background .18s;
+  }
+  .chapter .ticks button:hover::after { background: var(--ink-faint); }
+  .chapter .ticks button[aria-current="true"]::after { background: var(--ink); height: 3px; top: 4px; }
+  .chapter .ticks button.seen::after { background: var(--ink-faint); }
+  .chapter .ticks button:focus-visible { outline: 2px solid var(--neutral-acc); outline-offset: 1px; }
+
+  .colophon {
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  /* ---------------- motion ---------------- */
+
+  .reveal { opacity: 0; }
+  .stage.live .reveal {
+    animation: rise .5s cubic-bezier(.22,.8,.3,1) forwards;
+    animation-delay: calc(var(--i, 0) * 110ms);
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .stage.live .reveal { opacity: 1; animation: none; transform: none; }
+    .rail .fill { transition: none; }
+  }
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <h1>Two Agents, One Inbox</h1>
+    <span class="sub">Cherry Host · agent-routing-assessment</span>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="slate">
+      <span class="act" id="slate-act">The problem</span>
+      <span class="count" id="slate-count">01 / 17</span>
+    </div>
+    <div class="frame" id="frame" aria-live="polite"></div>
+    <div class="rail"><i class="fill" id="fill"></i></div>
+  </main>
+
+  <div class="transport">
+    <button class="btn primary" id="play" aria-label="Play or pause the walkthrough">Pause</button>
+    <button class="btn" id="prev" aria-label="Previous frame">&larr; Prev</button>
+    <button class="btn" id="next" aria-label="Next frame">Next &rarr;</button>
+    <nav class="chapters" id="chapters" aria-label="Chapters"></nav>
+  </div>
+
+  <footer class="colophon">
+    <span>Every figure, score, and terminal block on these frames is copied from a real <code>npm run demo</code> run in Replay Mode.</span>
+    <span>Space plays · &larr; &rarr; steps</span>
+  </footer>
+
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const bar = (route, val, max) => `
+    <div class="score ${route === 'finance' ? 'fin' : route === 'hr' ? 'hr' : ''}">
+      <span>${route}</span>
+      <span class="bar"><i style="width:${Math.round((val / max) * 100)}%"></i></span>
+      <span class="val">${val.toFixed(3)}</span>
+    </div>`;
+
+  const scores = (rows) => `<div class="scores">${rows.map(r => bar(r[0], r[1], 1)).join("")}</div>`;
+
+  /* ------------------------------------------------------------------
+     The frames. Order is the argument: the problem, then each section
+     of the solution in the order it was decided, then the system
+     running. Dwell is roughly reading time.
+     ------------------------------------------------------------------ */
+
+  const FRAMES = [
+
+  /* ============ ACT I — THE PROBLEM ============ */
+
+  { act: "The problem", dwell: 8000, html: `
+    <p class="eyebrow reveal" style="--i:0">A walkthrough in nineteen frames</p>
+    <h2 class="claim wide reveal" style="--i:1">Two Specialist Agents behind a deterministic Router.</h2>
+    <p class="lede reveal" style="--i:2">A command-line system that takes a business Question and chooses its own
+      route to an answer — to the Finance Agent, to the HR Agent, or to a meeting between them — without a human
+      deciding which one to ask, and without ever letting the two domains read each other's data.</p>
+    <p class="note reveal" style="--i:3">The problem is the one the assessment brief states. The solution is
+      broken into the five sections we settled on, each with the decision behind it recorded as an ADR.</p>` },
+
+  { act: "The problem", dwell: 10000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 02 · The inbox</p>
+    <h2 class="claim reveal" style="--i:1">Money Questions and people Questions land in the same inbox.</h2>
+    <div class="cols two" style="margin-top:22px">
+      <div class="card fin reveal" style="--i:2">
+        <span class="tag">A money Question</span>
+        <h3>“What did we spend on payroll?”</h3>
+        <p>Belongs to Finance. Answering it needs the expense lines and a payroll total.</p>
+      </div>
+      <div class="card hr reveal" style="--i:3">
+        <span class="tag">A people Question</span>
+        <h3>“What does Priya Raman earn?”</h3>
+        <p>Belongs to HR. Answering it needs one named person's salary.</p>
+      </div>
+    </div>
+    <p class="note reveal" style="--i:4">The operator asking either one should not have to know which department owns it.
+      That is the whole reason a Router exists.</p>` },
+
+  { act: "The problem", dwell: 10000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 03 · The boundary</p>
+    <h2 class="claim wide reveal" style="--i:1">But the data behind them cannot be pooled.</h2>
+    <p class="lede reveal" style="--i:2">Whoever answers <strong>“what did we spend on payroll?”</strong> must not be
+      able to read <strong>what any individual earns</strong>. The two Questions arrive together and their answers
+      must come from different places.</p>
+    <div class="cols two" style="margin-top:20px">
+      <div class="card reveal" style="--i:3">
+        <span class="tag">The obvious build</span>
+        <h3>One agent with access to everything</h3>
+        <p>Answers both kinds of Question on day one — and quietly destroys the boundary, because nothing in it
+          distinguishes a payroll total from a salary.</p>
+      </div>
+      <div class="card reveal" style="--i:4">
+        <span class="tag">The other obvious build</span>
+        <h3>Two agents and a human choosing</h3>
+        <p>Keeps the boundary and hands the routing decision back to the person asking. That is not a system;
+          it is two chat windows.</p>
+      </div>
+    </div>` },
+
+  { act: "The problem", dwell: 12000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 04 · Three problems sitting behind it</p>
+    <h2 class="claim wide reveal" style="--i:1">Splitting the agents creates three new problems.</h2>
+    <ol class="steps" style="margin-top:22px">
+      <li class="reveal" style="--i:2">
+        <div>
+          <h3>Some Questions genuinely need both domains</h3>
+          <p>“Should we hire more people?” is a headcount Question and a cash Question at once. Neither Specialist
+            Agent can answer it alone from its own data, and neither should be allowed to reach wider.</p>
+        </div>
+      </li>
+      <li class="reveal" style="--i:3">
+        <div>
+          <h3>An agent writing prose about numbers will invent one</h3>
+          <p>Sooner or later it states a figure that came from nowhere. In a finance answer that is not a
+            cosmetic flaw — someone acts on it.</p>
+        </div>
+      </li>
+      <li class="reveal" style="--i:4">
+        <div>
+          <h3>The reviewer has no API key, and every call costs money</h3>
+          <p>A system that only demonstrates itself by spending money demonstrates itself to nobody. The test
+            suite has the same problem: a suite that bills on every run is one nobody runs.</p>
+        </div>
+      </li>
+    </ol>` },
+
+  { act: "The problem", dwell: 9000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 05 · What has to be true at once</p>
+    <h2 class="claim wide reveal" style="--i:1">Five things, and each one makes another harder.</h2>
+    <ul class="plain reveal" style="--i:2; margin-top:20px">
+      <li><strong>The Question routes itself.</strong> No human picks the agent.</li>
+      <li><strong>The boundary holds structurally.</strong> Not by a prompt, and not by a filter someone has to get right.</li>
+      <li><strong>Cross-cutting Questions still get answered</strong> — without either agent widening its reach.</li>
+      <li><strong>Every figure is traceable</strong> to a tool result, or the answer is marked as unaudited.</li>
+      <li><strong>It runs with no key and no spend</strong>, and so does the whole test suite.</li>
+    </ul>
+    <p class="note reveal" style="--i:3">Each of the five is a section of what follows, in the order the decisions
+      were made — then five frames of the system running.</p>` },
+
+  /* ============ ACT II — THE SOLUTION ============ */
+
+  { act: "The solution", dwell: 14000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 06 · The shape of it</p>
+    <h2 class="claim wide reveal" style="--i:1">One Question in. Two lanes that never touch.</h2>
+    <div class="figure reveal" style="--i:2; margin-top:4px">
+      <svg viewBox="0 0 940 396" role="img" aria-label="A Question enters the Local Pass; an Abstention escalates; the resulting Route sends the Question to the Finance Agent, the HR Agent, an Agent Meeting, or a clarification request. Each agent reaches only its own Scoped Tools and its own Dataset, with no shared layer between them.">
+        <!-- question -->
+        <rect class="box box-n" x="14" y="190" width="112" height="40" rx="20"/>
+        <text class="lbl" x="70" y="215" text-anchor="middle">Question</text>
+
+        <!-- local pass -->
+        <rect class="box box-n" x="166" y="136" width="182" height="56" rx="2"/>
+        <text class="lbl" x="257" y="160" text-anchor="middle">Local Pass</text>
+        <text class="lbl-s" x="257" y="178" text-anchor="middle">free · deterministic · offline</text>
+
+        <!-- escalation -->
+        <rect class="box box-n" x="166" y="232" width="182" height="56" rx="2"/>
+        <text class="lbl" x="257" y="256" text-anchor="middle">Escalation</text>
+        <text class="lbl-s" x="257" y="274" text-anchor="middle">one model call, no tools</text>
+
+        <!-- route -->
+        <rect class="box" x="386" y="185" width="86" height="48" rx="2"/>
+        <text class="lbl" x="429" y="214" text-anchor="middle">Route</text>
+
+        <!-- wires in -->
+        <path class="wire" d="M126 210 H146 V164 H164"/>
+        <path class="wire-d" d="M257 192 V232"/>
+        <text class="lbl-s" x="265" y="217">Abstention</text>
+        <path class="wire" d="M348 164 H366 V203 H384"/>
+        <path class="wire" d="M348 260 H366 V215 H384"/>
+
+        <!-- destinations -->
+        <rect class="box box-f" x="516" y="20" width="180" height="44" rx="2"/>
+        <text class="lbl lbl-f" x="606" y="47" text-anchor="middle">Finance Agent</text>
+
+        <rect class="box box-h" x="516" y="112" width="180" height="44" rx="2"/>
+        <text class="lbl lbl-h" x="606" y="139" text-anchor="middle">HR Agent</text>
+
+        <rect class="box" x="516" y="228" width="180" height="44" rx="2"/>
+        <text class="lbl" x="606" y="255" text-anchor="middle">Agent Meeting</text>
+
+        <rect class="box" x="516" y="330" width="180" height="48" rx="2"/>
+        <text class="lbl" x="606" y="352" text-anchor="middle">Ask to rephrase</text>
+        <text class="lbl-s" x="606" y="368" text-anchor="middle">no agent is invoked</text>
+
+        <!-- route wires -->
+        <path class="wire" d="M472 209 H494 V42 H514"/>
+        <path class="wire" d="M472 209 H494 V134 H514"/>
+        <path class="wire" d="M472 209 H494 V250 H514"/>
+        <path class="wire" d="M472 209 H494 V354 H514"/>
+        <text class="lbl-s" x="498" y="36">finance</text>
+        <text class="lbl-s" x="498" y="128">hr</text>
+        <text class="lbl-s" x="498" y="244">both</text>
+        <text class="lbl-s" x="498" y="348">unclear</text>
+
+        <!-- the money lane -->
+        <rect class="box box-f" x="726" y="8" width="208" height="40" rx="2"/>
+        <text class="lbl-s lbl-f" x="830" y="25" text-anchor="middle">Scoped Tools</text>
+        <text class="lbl-s lbl-f" x="830" y="39" text-anchor="middle">revenue · cash · payroll total</text>
+        <rect class="box box-f" x="726" y="56" width="208" height="26" rx="2"/>
+        <text class="lbl-s lbl-f" x="830" y="73" text-anchor="middle">Finance Dataset</text>
+        <path class="wire" d="M696 42 H712 V28 H724"/>
+        <path class="wire" d="M830 48 V56"/>
+
+        <!-- the people lane -->
+        <rect class="box box-h" x="726" y="100" width="208" height="40" rx="2"/>
+        <text class="lbl-s lbl-h" x="830" y="117" text-anchor="middle">Scoped Tools</text>
+        <text class="lbl-s lbl-h" x="830" y="131" text-anchor="middle">headcount · salaries · attrition</text>
+        <rect class="box box-h" x="726" y="148" width="208" height="26" rx="2"/>
+        <text class="lbl-s lbl-h" x="830" y="165" text-anchor="middle">HR Dataset</text>
+        <path class="wire" d="M696 134 H712 V120 H724"/>
+        <path class="wire" d="M830 140 V148"/>
+
+        <!-- a meeting reaches each lane only through that lane's own tools -->
+        <path class="wire-d" d="M696 240 H706 V28 H724"/>
+        <path class="wire-d" d="M696 258 H716 V120 H724"/>
+
+        <!-- the divider that is the point -->
+        <line class="divider" x1="508" y1="92" x2="934" y2="92"/>
+        <text class="lbl-s" x="512" y="86">no shared layer · no tool reads across</text>
+      </svg>
+    </div>` },
+
+  { act: "The solution", dwell: 14000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 1 of 5 · The Router — ADR 0005</p>
+    <h2 class="claim wide reveal" style="--i:1">The free stage runs first. Only what it cannot place reaches the paid one.</h2>
+    <p class="lede reveal" style="--i:2">Asking a model on every Question costs a round-trip and gives a
+      non-deterministic answer to a decision that has to be testable. So the Router decides in two stages.</p>
+    <div class="tablewrap reveal" style="--i:3; margin-top:14px">
+      <table class="cmp">
+        <thead>
+          <tr><th></th><th>Local Pass</th><th>Escalation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Mechanism</th>
+            <td class="free">Vector embedding, on this machine</td>
+            <td>One model call — no tools, no history</td>
+          </tr>
+          <tr>
+            <th>Model</th>
+            <td class="free"><code>all-MiniLM-L6-v2</code>, q8-quantized</td>
+            <td>Claude</td>
+          </tr>
+          <tr>
+            <th>Decides by</th>
+            <td class="free">Cosine similarity against three Exemplar Banks</td>
+            <td>A one-word reply naming a Route</td>
+          </tr>
+          <tr>
+            <th>Thresholds</th>
+            <td class="free">Abstains below <code>0.40</code>; answers <code>both</code> inside <code>0.05</code></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <th>Costs</th>
+            <td class="free">Nothing, and repeats exactly</td>
+            <td>One call, and does not</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note reveal" style="--i:4">An <strong>Abstention</strong> is the Local Pass declining, and never reaches
+      the operator. <code>unclear</code> is a Route only Escalation can return. The type system makes confusing the
+      two an error rather than a judgement call.</p>` },
+
+  { act: "The solution", dwell: 13000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 1 · What the thresholds actually do</p>
+    <h2 class="claim wide reveal" style="--i:1">Two numbers carry every hard case.</h2>
+    <div class="cols two" style="margin-top:20px">
+      <div class="reveal" style="--i:2">
+        <span class="tag">Placed for nothing — “How much cash is left in the bank?”</span>
+        ${scores([["finance", 0.874], ["both", 0.394], ["hr", 0.309]])}
+        <p class="floor">Clears the 0.40 floor, and the top two are 0.480 apart — well outside the 0.05 margin.
+          Route: <code>finance</code>, decided by the Local Pass.</p>
+      </div>
+      <div class="reveal" style="--i:3">
+        <span class="tag">Abstained — “When did Ben Carter start?”</span>
+        ${scores([["hr", 0.350], ["finance", 0.239], ["both", 0.164]])}
+        <p class="floor">Five words, most of them a name the embedding model has never met. Nothing clears the
+          floor, so the Local Pass abstains and Escalation places it — correctly — as <code>hr</code>.</p>
+      </div>
+    </div>
+    <p class="note reveal" style="--i:4">The floor sits at 0.40 because the nearest Questions either side of it are
+      “Is anyone quitting more than usual?” at 0.436 and “What time does the office open?” at 0.340. It is in a real
+      gap, not on top of a cluster. Routing is tuned by editing that data — a phrasing, or a threshold — never by
+      editing Router logic.</p>` },
+
+  { act: "The solution", dwell: 12000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 1 · The cost of the trade</p>
+    <h2 class="claim wide reveal" style="--i:1">The failure mode got quieter, not smaller.</h2>
+    <p class="lede reveal" style="--i:2">An unanticipated phrasing used to misroute. Now it abstains, escalates,
+      and usually comes back with the right Route. That is better — and it moves the failure somewhere harder to see.</p>
+    <div class="cols two" style="margin-top:18px">
+      <div class="card reveal" style="--i:3">
+        <span class="tag">What we gained</span>
+        <h3>A phrasing nobody anticipated still gets answered</h3>
+        <p>Exemplar Banks cannot be written to cover everything. Escalation is what stops that limit from
+          being a dead end.</p>
+      </div>
+      <div class="card bad reveal" style="--i:4">
+        <span class="tag">What we gave up</span>
+        <h3>Ambiguous input is no longer free</h3>
+        <p>A thin Exemplar Bank now shows up as <strong>spend</strong> rather than as a visible misroute.
+          <code>npm run survey</code> measures the Abstention rate over a realistic day: currently 21%.</p>
+      </div>
+    </div>
+    <p class="note reveal" style="--i:5">An earlier version of the spec promised that vague input costs nothing.
+      That promise was withdrawn on purpose, and ADR 0005 carries the reasoning so the reversal is on the record
+      rather than inferred from the code. Widening a Bank is therefore both a routing fix and a cost fix.</p>` },
+
+  { act: "The solution", dwell: 14000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 2 of 5 · Isolation — ADR 0004</p>
+    <h2 class="claim wide reveal" style="--i:1">Isolation is wiring, not policy.</h2>
+    <p class="lede reveal" style="--i:2">Each Specialist Agent owns a Dataset and is handed only its own Scoped
+      Tools. There is no shared data layer, no caller identity, and no tool that reads across the boundary.</p>
+    <div class="cols two" style="margin-top:18px">
+      <div class="card fin reveal" style="--i:3">
+        <span class="tag">Finance Agent · Noah</span>
+        <h3>revenue · expenses · cash · payroll total</h3>
+        <p>Its payroll tool returns a company-wide total and the headcount it covers, <strong>because that is the
+          only shape it can return</strong> — not because a filter stripped the rest.</p>
+      </div>
+      <div class="card hr reveal" style="--i:4">
+        <span class="tag">HR Agent · Eva</span>
+        <h3>headcount · vacancies · attrition · salaries</h3>
+        <p>It holds the tool that exposes an individual salary. The Finance Agent cannot call it, because there
+          is no registry to look another agent's tool up in.</p>
+      </div>
+    </div>
+    <p class="note reveal" style="--i:5">The alternative — one data layer with a caller identity and per-request
+      filtering — was rejected because it makes isolation a runtime property that depends on filter logic being
+      right on every path. A filter I wrote fails open and silent. A tool that does not exist cannot be called.</p>` },
+
+  { act: "The solution", dwell: 13000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 2 · Three layers, one load-bearing</p>
+    <h2 class="claim wide reveal" style="--i:1">A system prompt is not a security boundary.</h2>
+    <ol class="steps" style="margin-top:20px">
+      <li class="reveal" style="--i:2">
+        <div>
+          <h3>Prompt — what the agent <em>should</em> do</h3>
+          <p>Names its domain, and tells it to decline rather than speculate, so a misroute surfaces as a refusal
+            instead of an invented answer. Shapes behaviour; guarantees nothing.</p>
+        </div>
+      </li>
+      <li class="reveal" style="--i:3">
+        <div>
+          <h3>Tools — what the agent <em>can</em> do</h3>
+          <p>Its own array of Scoped Tools, and no registry holding anyone else's. Figures that must cross the
+            boundary exist only in aggregate shape, so there is no filtered version to get wrong. This is what
+            ships, and what the tests assert.</p>
+        </div>
+      </li>
+      <li class="reveal" style="--i:4">
+        <div>
+          <h3>Database — what the agent <em>may</em> do</h3>
+          <p>Tools run under a per-agent database role with row-level security. The layer I would not ship to
+            production without, because the two above it are code I wrote.</p>
+        </div>
+      </li>
+    </ol>
+    <p class="note reveal" style="--i:5">Routing sits <em>outside</em> the boundary and reads no Dataset — the Local
+      Pass compares vectors, and Escalation sends the Question text alone. So a misroute is a wrong answer, never a
+      leak, and routing accuracy is never a security control.</p>` },
+
+  { act: "The solution", dwell: 13000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 3 of 5 · The Agent Meeting</p>
+    <h2 class="claim wide reveal" style="--i:1">Cross-cutting work combines two scoped views. It never widens one.</h2>
+    <p class="lede reveal" style="--i:2">Eight agents in an open conversation fails three ways: cost is unbounded,
+      ordering is non-deterministic, and each agent has to be shown the others' output — which undoes section 2.
+      So a meeting has exactly two phases.</p>
+    <ol class="steps" style="margin-top:18px">
+      <li class="reveal" style="--i:3">
+        <div>
+          <h3>Gather — each attendee answers alone</h3>
+          <p>Every attendee answers the same Question through its own Scoped Tools and returns a contribution with
+            the tool results that produced it attached. These run in parallel. No agent sees another's data.</p>
+        </div>
+      </li>
+      <li class="reveal" style="--i:4">
+        <div>
+          <h3>Synthesis — one call, holding no tools</h3>
+          <p>It receives the contributions and combines them into one recommendation, attributing each fact to the
+            agent that supplied it. The operator gets a decision, not a transcript.</p>
+        </div>
+      </li>
+    </ol>
+    <p class="note reveal" style="--i:5">That bounds a meeting at <strong>N+1 calls</strong>, keeps it reproducible,
+      and means the only thing crossing a department boundary is a sentence an agent chose to publish.</p>` },
+
+  { act: "The solution", dwell: 14000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 4 of 5 · The Number Audit — ADR 0006</p>
+    <h2 class="claim wide reveal" style="--i:1">Every figure in an answer must appear in the tool results it was built from.</h2>
+    <p class="lede reveal" style="--i:2">“Only use figures from your tools” is a request to a model. The audit is
+      the enforcement. It checks <strong>provenance, not arithmetic</strong> — a figure the agent computed is a
+      figure no tool returned, and that is exactly what it is for.</p>
+    <div class="cols two" style="margin-top:18px">
+      <div class="card reveal" style="--i:3">
+        <span class="tag">The tolerance we rejected</span>
+        <h3>Accepting a percentage derived from two audited figures</h3>
+        <p>“Payroll was 62% of expenses” is built from grounded numbers, and flagging it is a false alarm. But a
+          dozen figures in evidence yield over a hundred ratios — percentages would become the one place an
+          invented figure passed unchallenged.</p>
+      </div>
+      <div class="card reveal" style="--i:4">
+        <span class="tag">The tolerance we kept</span>
+        <h3>Dates are values; quarter labels are names</h3>
+        <p>Reading <code>2025-09-30</code> as 2025, 9 and 30 would hand an answer a free “30 months of runway”.
+          So a date is matched whole, and <code>Q3</code> is a period, not the number three.</p>
+      </div>
+    </div>
+    <p class="note reveal" style="--i:5">A failing answer is shown, not suppressed — the operator needs to see what
+      the agent claimed to judge how badly it went wrong. The cost is paid knowingly: some correct answers get
+      marked unaudited.</p>` },
+
+  { act: "The solution", dwell: 13000, html: `
+    <p class="eyebrow reveal" style="--i:0">Section 5 of 5 · Replay Mode — ADR 0001 &amp; 0003</p>
+    <h2 class="claim wide reveal" style="--i:1">Clone it, install it, run it. No key, no spend, no network.</h2>
+    <p class="lede reveal" style="--i:2">Replay Mode is the default. Every model response is served from a
+      <strong>Fixture</strong> — a real response captured from a deliberate Live Mode run. The whole test suite
+      runs on that same path, so it is hermetic and costs nothing.</p>
+    <ul class="plain reveal" style="--i:3; margin-top:14px">
+      <li><strong>One seam.</strong> Every agent, and Escalation too, reaches the model through one small
+        <code>LLMClient</code>. Live and replay are two implementations of it, not a branch inside the agents.</li>
+      <li><strong>Keyed by the whole request</strong> — a digest over the model, system prompt, message history
+        and tool schemas, so editing a prompt invalidates the recording it produced.</li>
+      <li><strong>A miss is a hard error</strong> naming the missing key. Never a quiet call to the live API,
+        never a fabricated answer.</li>
+      <li><strong>Recorded, never written.</strong> A hand-edited Fixture would make the demo stop meaning what
+        it claims to mean.</li>
+    </ul>
+    <p class="note reveal" style="--i:4">That adapter is the one substitution permitted anywhere in the suite.
+      Everything above the seam is exercised through its real wiring.</p>` },
+
+  /* ============ ACT III — IT RUNS ============ */
+
+  { act: "It runs", dwell: 12000, html: `
+    <p class="eyebrow fin reveal" style="--i:0">Frame 15 · The ordinary case</p>
+    <h2 class="claim wide reveal" style="--i:1">Placed for nothing, answered from one tool, audited.</h2>
+    <pre class="term reveal" style="--i:2">Question: <span class="q">How much cash is left in the bank?</span>
+
+Route:    <span class="rf">finance</span>   (Local Pass)
+Agent:    <span class="rf">Finance Agent</span>
+
+As of September 30, 2025, Cherry Host has <b>$1,248,000</b> in the bank. With a
+monthly net burn of <b>$96,000</b>, that gives a runway of approximately
+<b>13 months</b> at the current rate.
+
+<span class="ok">Number Audit: passed</span> <span class="dim">— every figure above appears in a Scoped Tool result.</span>
+
+<span class="dim">Similarity scores by Exemplar Bank:
+  finance 0.874
+  both    0.394
+  hr      0.309</span></pre>
+    <p class="note reveal" style="--i:3">No key, nothing spent. Every run reports the Route, the stage that decided
+      it, who answered, the audit's verdict and the scores behind the decision — so a misroute is debuggable by
+      reading the output rather than by adding logging.</p>` },
+
+  { act: "It runs", dwell: 12000, html: `
+    <p class="eyebrow hr reveal" style="--i:0">Frame 16 · Escalation earning its cost</p>
+    <h2 class="claim wide reveal" style="--i:1">A phrasing the Banks never anticipated, rescued by one small call.</h2>
+    <pre class="term reveal" style="--i:2">Question: <span class="q">When did Ben Carter start?</span>
+
+Route:    <span class="rh">hr</span>        (Escalation)
+Agent:    <span class="rh">HR Agent</span>
+
+Ben Carter, a Junior Engineer on the Engineering team, started on
+<b>February 3, 2025</b> (per records as of September 30, 2025).
+
+<span class="ok">Number Audit: passed</span>
+<span class="dim">Similarity scores by Exemplar Bank:
+  hr      0.350   finance 0.239   both 0.164
+
+The Local Pass abstained — nothing cleared the 0.4 score floor — so this
+Question went to Escalation, the only routing step that spends.</span></pre>
+    <p class="note reveal" style="--i:3">One negative assertion guards this: a Question the Local Pass
+      <em>places</em> must not escalate. Silent escalation on every Question would pass every other test in the
+      suite while quietly spending on each run.</p>` },
+
+  { act: "It runs", dwell: 15000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 17 · The audit failing, on purpose</p>
+    <h2 class="claim wide reveal" style="--i:1">The demo ships a meeting where the check fires.</h2>
+    <pre class="term reveal" style="--i:2; line-height:1.48">Question: <span class="q">Should we hire more people?</span>
+
+Route:    <span class="rb">both</span>      (Local Pass)
+Meeting:  <span class="rf">Finance Agent</span>, <span class="rh">HR Agent</span>
+
+<b>Fill the existing open roles; do not add headcount beyond them for now.</b>
+
+The HR Agent reports 5 open vacancies already in the pipeline […] the Finance
+Agent reports a year-to-date operating loss of roughly $1,021,000, with payroll
+the largest expense line at $3,100,000 (62% of expenses) for 48 people.
+
+<span class="bad">Number Audit: FAILED — no Scoped Tool result accounts for 1,021,000, 62
+in the Finance Agent's contribution.
+Number Audit: FAILED — no Scoped Tool result accounts for 1,021,000, 62
+in the joint recommendation above.</span>
+<span class="dim">What you are reading is unaudited — do not act on its numbers.</span></pre>
+    <p class="note reveal" style="--i:3">Both figures are derived — the loss from revenue minus expenses, the
+      percentage from payroll over expenses. Correct arithmetic; no tool returned either. The recording was kept
+      rather than re-rolled, and a re-recording that comes back clean fails the test pinning it.</p>` },
+
+  { act: "It runs", dwell: 15000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 18 · The end of the line</p>
+    <h2 class="claim wide reveal" style="--i:1">When neither stage can place it, it asks rather than guesses.</h2>
+    <pre class="term reveal" style="--i:2">Question: <span class="q">How do I fix the printer?</span>
+
+Route:    <span class="rb">unclear</span>   (Escalation)
+
+<span class="dim">Similarity scores by Exemplar Bank:
+  hr      0.160   finance 0.135   both 0.096</span>
+
+Neither the Local Pass nor Escalation could place this Question, so I would
+rather ask than guess. Could you rephrase it, saying whether you are asking
+about money (revenue, expenses, cash, payroll cost) or about people
+(headcount, salaries, vacancies, attrition) — or both?</pre>
+    <p class="note reveal" style="--i:3">No Specialist Agent is invoked. Compare the near miss: “Who won the customer
+      of the year award?” scores 0.421 against hr, clears the floor, and lands on the HR Agent — which holds no tool
+      for it and says so. A misroute degrades into a visible refusal rather than an invented winner.</p>` },
+
+  { act: "It runs", dwell: 16000, html: `
+    <p class="eyebrow reveal" style="--i:0">Frame 19 · What we did not build</p>
+    <h2 class="claim wide reveal" style="--i:1">The limits are written down, not discovered.</h2>
+    <div class="cols two" style="margin-top:18px">
+      <div class="reveal" style="--i:2">
+        <span class="tag">Known limits, on the record</span>
+        <ul class="plain">
+          <li>The embedding model is <strong>English-only</strong>. A French Question scores 0.193 against its best
+            Bank — the wrong model, not a thin Bank.</li>
+          <li><strong>Escalation verdicts are not cached</strong>, so the same unplaceable Question escalates every time.</li>
+          <li>A Number Audit failure <strong>does not suppress the answer</strong>.</li>
+          <li>Datasets are <strong>hardcoded JSON</strong>. There is no database, by design.</li>
+        </ul>
+      </div>
+      <div class="reveal" style="--i:3">
+        <span class="tag">Deliberately next, not now</span>
+        <ul class="plain">
+          <li><strong>Caching Escalation verdicts</strong> — worth doing if Escalation becomes common; today the
+            cheaper fix is widening a Bank.</li>
+          <li><strong>Feeding verdicts back into the Banks</strong> — tempting, and it would let routing drift
+            without anyone deciding to.</li>
+          <li><strong>A second provider adapter</strong> — the seam is the deliverable; an untested adapter is not.</li>
+          <li><strong>Queueing, retries and rate limits</strong> at the seam every call already passes through.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note reveal" style="--i:4">Adding a third Specialist Agent is four pieces of data and one line of
+      wiring: a Dataset, an array of Scoped Tools, a prompt, an Exemplar Bank. The HR Agent arrived as exactly
+      that — touching neither the agent runtime, nor the Router logic, nor the seam. One thing a third agent
+      forces open first: <code>both</code> names a pair, and with three domains it no longer does.</p>` },
+  ];
+
+  /* ------------------------------------------------------------------ */
+
+  const stage    = document.getElementById("stage");
+  const frameEl  = document.getElementById("frame");
+  const fillEl   = document.getElementById("fill");
+  const actEl    = document.getElementById("slate-act");
+  const countEl  = document.getElementById("slate-count");
+  const playBtn  = document.getElementById("play");
+  const chapters = document.getElementById("chapters");
+
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let index = 0;
+  let playing = !reduced;
+  let started = 0;
+  let elapsed = 0;
+  let raf = null;
+
+  /* chapter rail — one tick per frame, grouped by act */
+  const ticks = [];
+  const acts = [];
+  FRAMES.forEach((f, i) => {
+    const last = acts[acts.length - 1];
+    if (!last || last.name !== f.act) acts.push({ name: f.act, from: i, to: i });
+    else last.to = i;
+  });
+  acts.forEach(a => {
+    const wrap = document.createElement("div");
+    wrap.className = "chapter";
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = a.name;
+    const row = document.createElement("div");
+    row.className = "ticks";
+    for (let i = a.from; i <= a.to; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-label", `Frame ${i + 1}: ${a.name}`);
+      b.addEventListener("click", () => go(i));
+      row.appendChild(b);
+      ticks[i] = b;
+    }
+    wrap.append(name, row);
+    chapters.appendChild(wrap);
+  });
+
+  const pad = n => String(n).padStart(2, "0");
+
+  function render() {
+    const f = FRAMES[index];
+    stage.classList.remove("live");
+    frameEl.innerHTML = f.html;
+    frameEl.scrollTop = 0;
+    actEl.textContent = f.act;
+    countEl.textContent = `${pad(index + 1)} / ${pad(FRAMES.length)}`;
+    // force reflow so the reveal animations restart on every frame
+    void frameEl.offsetWidth;
+    stage.classList.add("live");
+    ticks.forEach((t, i) => {
+      t.setAttribute("aria-current", i === index ? "true" : "false");
+      t.classList.toggle("seen", i < index);
+    });
+  }
+
+  function go(i) {
+    index = (i + FRAMES.length) % FRAMES.length;
+    elapsed = 0;
+    started = performance.now();
+    render();
+  }
+
+  function tick(now) {
+    if (playing) {
+      const dt = now - started;
+      const total = elapsed + dt;
+      const dwell = FRAMES[index].dwell;
+      fillEl.style.width = `${Math.min(100, (total / dwell) * 100)}%`;
+      if (total >= dwell) { go(index + 1); }
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function setPlaying(on) {
+    if (on === playing) return;
+    if (on) { started = performance.now(); }
+    else { elapsed += performance.now() - started; }
+    playing = on;
+    playBtn.textContent = on ? "Pause" : "Play";
+  }
+
+  playBtn.addEventListener("click", () => setPlaying(!playing));
+  document.getElementById("next").addEventListener("click", () => { setPlaying(false); go(index + 1); });
+  document.getElementById("prev").addEventListener("click", () => { setPlaying(false); go(index - 1); });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "BUTTON" && e.key === " ") return;
+    if (e.key === "ArrowRight") { setPlaying(false); go(index + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { setPlaying(false); go(index - 1); e.preventDefault(); }
+    else if (e.key === " ") { setPlaying(!playing); e.preventDefault(); }
+  });
+
+  playBtn.textContent = playing ? "Pause" : "Play";
+  started = performance.now();
+  render();
+  raf = requestAnimationFrame(tick);
+})();
+</script>
