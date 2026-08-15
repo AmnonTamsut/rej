@@ -1,10 +1,5 @@
 # The three written answers
 
-The assessment's three questions, answered for the platform as described — eight
-department agents over one Supabase database, fifteen employees using personal
-assistants. The repository is the small version built end-to-end: two agents
-rather than eight, hardcoded Datasets rather than 228 tables. Where an answer
-below names something that exists in the code, it is cited.
 
 ## 1 — Agent Isolation
 
